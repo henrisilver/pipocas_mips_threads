@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <semaphore.h> // não sei se vamos precisar
 
+
+
 int main (int, char **);
 int ula( int, int , char, int *, char *, char *);
 void control_unit(int, short int *);
@@ -39,37 +41,37 @@ int main (int argc, char *argv[])
     short int sc = 0;
     int nr_ciclos = 0;
   
-  	pthread_t control_unit;
-  	pthread_t PC;
-  	pthread_t mux_2_iord;
-  	pthread_t mux_2_regdst;
+    pthread_t control_unit;
+    pthread_t PC;
+    pthread_t mux_2_iord;
+    pthread_t mux_2_regdst;
     pthread_t mux_2_memtoreg;
     pthread_t mux_2_alusrca;
-  	pthread_t mux_3_pcsource;
-  	pthread_t mux_4_alusrcb;
-  	pthreat_t main_memory;
-  	pthread_t instruction_register;
-  	pthread_t mdr;
-  	pthreat_t registers_bank;
-  	pthread_t shift_left_pc;
-  	pthread_t shift_left_imm;
-  	pthread_t sign_ext;
-  	pthread_t alu;
-	pthread_t alu_control;
-	pthreat_t aluout;
+    pthread_t mux_3_pcsource;
+    pthread_t mux_4_alusrcb;
+    pthreat_t main_memory;
+    pthread_t instruction_register;
+    pthread_t mdr;
+    pthreat_t registers_bank;
+    pthread_t shift_left_pc;
+    pthread_t shift_left_imm;
+    pthread_t sign_ext;
+    pthread_t alu;
+  pthread_t alu_control;
+  pthreat_t aluout;
     pthread_t A;
     pthread_t B;
     pthread_t and_or;
   
-                             //                                             	## fat(n) iterativo
+                             //                                               ## fat(n) iterativo
     memoria[0] = 0x8db00000; // 1000 1101 1011 0000 0000 0000 0000 0000         lw $s0, 0($t5)       # carrega n da memoria
-    memoria[1] = 0x11300005; // 0001 0001 0011 0000 0000 0000 0000 0101   		loop: beq $t1, $s0, fim    # se der a cond. sai do loop
+    memoria[1] = 0x11300005; // 0001 0001 0011 0000 0000 0000 0000 0101       loop: beq $t1, $s0, fim    # se der a cond. sai do loop
     memoria[2] = 0x01025020; // 0000 0001 0000 0010 0101 0000 0010 0000         add $t2, $t0, $v0    # t2 = t0 + v0)
     memoria[3] = 0x00404025; // 0000 0000 0100 0000 0100 0000 0010 0101         or $t0, $v0, $zero   # t0 = v0
     memoria[4] = 0x01431024; // 0000 0001 0100 0011 0001 0000 0010 0100         and $v0, $t2, $v1    # v0 = t2
     memoria[5] = 0x012b4820; // 0000 0001 0010 1011 0100 1000 0010 0000         add $t1, $t1, $t3    # t1 = t1 + 1
     memoria[6] = 0x08000001; // 0000 1000 0000 0000 0000 0000 0000 0001         j loop (palavra 1)   # volta pro loop
-    memoria[7] = 0xad820000; // 1010 1101 1000 0010 0000 0000 0000 0000   		fim:  sw $v0, 0($t4)       # salva o resultado na memoria
+    memoria[7] = 0xad820000; // 1010 1101 1000 0010 0000 0000 0000 0000       fim:  sw $v0, 0($t4)       # salva o resultado na memoria
     memoria[8] = 0;          // criterio de parada do programa   ciclos: 1+5+(22*(n-1))+3+4+1
     memoria[9] = 0;
     // Dados
@@ -89,13 +91,13 @@ int main (int argc, char *argv[])
     
     while(loop) //Trocar instrução
     {
-      	control_unit(IR, &sc, 0);
-      	Busca_Instrucao(sc, PC, ALUOUT, IR, &PCnew, &IRnew, &MDRnew);
+        control_unit(IR, &sc, 0);
+        Busca_Instrucao(sc, PC, ALUOUT, IR, &PCnew, &IRnew, &MDRnew);
       
-      	control_unit(IR, &sc, 1);
-      	ciclos = Decodifica_BuscaRegistrador(sc, IR, PC, A, B, &Anew, &Bnew, &ALUOUTnew);
+        control_unit(IR, &sc, 1);
+        ciclos = Decodifica_BuscaRegistrador(sc, IR, PC, A, B, &Anew, &Bnew, &ALUOUTnew);
       
-      	while(i < ciclos)
+        while(i < ciclos)
         {
             // aqui comeca um novo ciclo
             // abaixo estao as unidades funcionais que executarao em todos os ciclos
@@ -130,32 +132,32 @@ int main (int argc, char *argv[])
        printf("Nr de ciclos executados =%d \n", nr_ciclos);
     }
 
-	// Criacao de threads
- 	//    pthread_t prod_handle, cons_handle;
+  // Criacao de threads
+  //    pthread_t prod_handle, cons_handle;
 
-	// /* declarations and initializations */
- 	//    	item_available = 0;
+  // /* declarations and initializations */
+  //      item_available = 0;
 
-	// sem_init (&mutex, 0 , 1);
-	// sem_init(&empty, 0, MAX_QUEUE);
-	// sem_init(&full, 0, 0);
+  // sem_init (&mutex, 0 , 1);
+  // sem_init(&empty, 0, MAX_QUEUE);
+  // sem_init(&full, 0, 0);
 
-	// /* create and join producer and consumer threads */
+  // /* create and join producer and consumer threads */
 
-	// if (pthread_create(&prod_handle, 0, (void *) producer, (void *) 0) != 0) { 
-	// 	printf("Error creating thread producer! Exiting! \n");
-	// 	exit(0);
-	// }
-	// if (pthread_create(&cons_handle, 0, (void *) consumer, (void *) 0) != 0) { 
-	// 	printf("Error creating thread consumer! Exiting! \n");
-	// 	exit(0);
-	// }
-	
-	// printf("\n Thread pai vai esperar filhas.\n\n");
-	// fflush(0);
+  // if (pthread_create(&prod_handle, 0, (void *) producer, (void *) 0) != 0) { 
+  //  printf("Error creating thread producer! Exiting! \n");
+  //  exit(0);
+  // }
+  // if (pthread_create(&cons_handle, 0, (void *) consumer, (void *) 0) != 0) { 
+  //  printf("Error creating thread consumer! Exiting! \n");
+  //  exit(0);
+  // }
+  
+  // printf("\n Thread pai vai esperar filhas.\n\n");
+  // fflush(0);
 
-	// pthread_join(prod_handle, 0);
-	// pthread_join(cons_handle, 0);
+  // pthread_join(prod_handle, 0);
+  // pthread_join(cons_handle, 0);
     
     exit( 0);
 } // fim de main
@@ -198,7 +200,7 @@ void gera_sinal_controle (int *output, char S)
         *output = *output & desativa_ALUOp0;
         *output = *output & desativa_ALUOp1;
     
-      	*output = *output | tab_desp1;
+        *output = *output | tab_desp1;
     }
     
     // Estado 2 - Memory address computation
@@ -291,32 +293,32 @@ void gera_sinal_controle (int *output, char S)
 
 void control_unit(int IR, short int *sc, int cycle)
 {
-	int sinal;
-  	char S;
+  int sinal;
+    char S;
     char op = ((IR & separa_cop) >> 26) & 0x3f;
- 	switch(cycle)
+  switch(cycle)
     {
-      	case 0:
-      		/*Busca Instrução 1 Estado
+        case 0:
+          /*Busca Instrução 1 Estado
               Gera sinais de controle
             */
-      		S = 0;
-      	break;
+          S = 0;
+        break;
       
-      	case 1:
-      		/*Decodifica 2 Estados
+        case 1:
+          /*Decodifica 2 Estados
               Gera novos sinais de controle
             */
-      		S = 1;
-      	break;
+          S = 1;
+        break;
       
-      	case 2:
-      		/* Dependererá do IR. IFS?
+        case 2:
+          /* Dependererá do IR. IFS?
             if(branch) Gera sinais p branch
-			else if(add) gera sinais p add
+      else if(add) gera sinais p add
             add,sub,lw,sw
             */
-      		if(op == 2)//jump
+          if(op == 2)//jump
               S = 9;
             else if(op == 4)//beq
               S = 8;
@@ -324,10 +326,10 @@ void control_unit(int IR, short int *sc, int cycle)
               S = 6;
             else if(op == 35 || op == 43)//lw ou sw
               S = 2;
-      	break;
+        break;
       
-      	case 3:
-      		/*
+        case 3:
+          /*
             
             */
             if(op == 0)//r-type
@@ -336,13 +338,13 @@ void control_unit(int IR, short int *sc, int cycle)
               S = 3;
             else if(op == 43) //lw ou sw
               S = 5;
-      	break;
+        break;
       
-      	case 4: // Somente executara no caso da instrucao lw
-      		S = 4;
-      	break;
+        case 4: // Somente executara no caso da instrucao lw
+          S = 4;
+        break;
     }
-  	gera_sinal_controle (&sinal, S);
+    gera_sinal_controle (&sinal, S);
     *sc = output_signals & 0x0000ffff;
     // broadcast(sc);
 }
