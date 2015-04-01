@@ -1,0 +1,15 @@
+Boa tarde, Professor.
+
+Sou Marcello Costa, aluno do curso de Engenharia de Computação, e hoje, enquanto discutia o trabalho com o grupo, algumas dúvidas surgiram.
+
+A primeira delas é a seguinte: Como serão passadas as instruções assembly para o programa (Entrada de dados)? Como foi feito no trabalho de Org de 2013 (memoria[0] = 0x8db00008) ? Via argc,argv? Via arquivo? Via scanf? Outro? Serão inteiros (hexa: memoria[0] = 0x8db00008) ou serão texto (add $t0,$t0,$t0) que deverão ser convertidos em binários.
+
+A segunda dúvida é relativa à inicialização da memória principal. Qual é o parâmetro de tamanho e como ele será definido?
+
+A terceira e não última é sobre qual será o conteúdo inicial da memória?
+
+Sobre a saída. Será necessário imprimir apenas os conteúdos alterados da memória principal, ou seja, se a memória tinha 128 posições e somente 3 foram alteradas, somente essas três serão impressas? E essa impressão deverá abranger tanto a posição quanto o conteúdo alterado ou somente conteúdo?
+
+Uma outra dúvida é sobre como o IR/PC/MDR receberão sinais de controle sendo que ele são descritos como variáveis globais.
+Atenciosamente,
+Marcello Costa.
