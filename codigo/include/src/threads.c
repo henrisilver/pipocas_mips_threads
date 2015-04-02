@@ -73,6 +73,35 @@ enum positions {
     IRWrite_POS
 };
 
+/*	**** A seguinte estrutura terá de ser aplicada nas threads que esperarão pelo sinal da unidade de controle:
+
+	pthread_mutex_lock(&mutex)
+	while(!condition) {
+		pthread_cond_signal(&condition_t,&mutex) >> Imediatamente antes de dormir, libera o mutex!  <<
+	}
+	>> Realiza tarefas necessários depois de ter obtido o sinal verdadeiro de condição <<
+	>> É implicito que quando sair do loop while, o mutex terá sido relocado <<
+
+	pthread_mutex_unlock(&mutex)
+
+
+
+
+
+	**** A seguinte estrutura deverá ser aplicada na unidade de controle:
+
+	pthread_mutex_lock(&mutex)
+	>> Realiza alguma coisa que poderá liberar a condição necessária para outras acordarem  <<
+
+	pthread_cond_signal()
+	pthread_mutex_unlock (&mutex)
+
+	// Do código acima é importante notar que mesmo a unidade de controle tendo liberado a flag da
+	// variável de condição, ele ainda não liberou o mutex. Logo em seguida libera.
+	
+ */
+
+
 void mux_2_IorD (){
   //mutex lock
     if(( (separa_IorD & sc) >> IorD_POS) & 0x01 == 0)
