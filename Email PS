@@ -13,3 +13,50 @@ Sobre a saída. Será necessário imprimir apenas os conteúdos alterados da mem
 Uma outra dúvida é sobre como o IR/PC/MDR receberão sinais de controle sendo que ele são descritos como variáveis globais.
 Atenciosamente,
 Marcello Costa.
+
+
+
+Oi Marcello,
+
+Bom dia.
+
+Sobre a primeira dúvida, o binário pode estar fixo no seu código, como foi feito no trab de org.
+Por exemplo, segue aqui um exemplo de código pequeno que inseri diretamente no meu programa (vcs que fizeram org comigo já devem ter esse programa):
+
+	memoria[0] = 0x8c480000;  // lw $t0, 0($v0)
+	memoria[1] = 0x010c182a;  // slt $v1, $t0, $t4
+	memoria[2] = 0x106d0004;  // beq $v1, $t5, fim(4 palavras abaixo de PC+4)
+//	memoria[3] = 0x010b4024;  // and $t0, $t0, $t3
+//	memoria[3] = 0x01084020;  // add $t0, $t0, $t0
+	memoria[3] = 0x010b4022;  // sub $t0, $t0, $t3
+	memoria[4] = 0xac480000;  // sw $t0, 0($v0)
+	memoria[5] = 0x004b1020;  // add $v0, $t3, $v0     //  sw $t0, 0($v0)
+	memoria[6] = 0x08000000;  // j inicio (palavra 0)
+	memoria[7] = 0;           // fim
+	memoria[8] = 0;
+	memoria[9] = 0;
+	// Dados
+
+	memoria[21] = 20;
+	memoria[22] = 22;
+	memoria[23] = 24;
+	memoria[24] = 26;
+	memoria[25] = 28;
+	memoria[26] = -1;
+
+
+Sobre a segunda dúvida, definam uma macro que determina o tamanho da RAM.
+
+
+Sobre a terceira dúvida, você pode preencher um conteúdo inicial, como feito no código acima.
+
+Sobre a quarta dúvida, a impressão deve mostrar a posição de memória e seu conteúdo. Não faz sentido mostrar só conteúdo ou só posição; como validar?! 
+Imprima somente as posições de memória que forem alteradas (isso está escrito na especificação; confesso que não entendi a pergunta). Fazendo um copy-and-paste do pdf:  "A saída do programa deve ser apenas: (1) o conteúdo das posições de memória RAM que foram alteradas pelo programa e (2) o conteúdo dos registradores."
+
+Sobre a quinta dúvida, esses registradores são manipulados por threads e são as threads que sincronizam, obviamente.
+
+Abraços.
+
+Paulo S. L. Souza
+
+
