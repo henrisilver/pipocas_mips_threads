@@ -41,11 +41,11 @@ int mux_ALUSrcB_buffer;
 // shift left2 (as duas [em um deles deve ter concatenacao com 4 bits de PC])
 // sign extend
 // ALU
-// A (deve ter uma thread para escrever aqui)
-// B (deve ter uma thread para escrever aqui)
+// OK--------> A (deve ter uma thread para escrever aqui)
+// OK--------> B (deve ter uma thread para escrever aqui)
 // AND e OR
 // OK--------> MDR (deve ter uma thread para escrever aqui)
-// OK--------> PC (deve ter uma thread para escrever aqui)
+// kinda ok -> PC (deve ter o sinal de controle de E_OU)
 // OK--------> Memory
 // Banco de Registradores
 // OK--------> IR
@@ -146,22 +146,22 @@ void escreve_IR (){
 }
 
 void escreve_A (){
-  //mutex lock de PC e PCSource_buffer
+  //mutex lock
   A = read_data_1;  
 }
 
 void escreve_B (){
-  //mutex lock de PC e PCSource_buffer
+  //mutex lock
   B = read_data_2;  
 }
 
 void memory_access ()
 {
     if ((separa_MemRead & sc) == ativa_MemRead)  
-      memory_content_read = memoria[mux_IorD_buffer/4];
+    memory_content_read = memoria[mux_IorD_buffer/4];
   
     if ((sc & separa_MemWrite) == ativa_MemWrite)
-      memoria[Adress/4] = B;
+      memoria[mux_IorD_buffer/4] = B;
 }
 
 void banco_registradores ()
