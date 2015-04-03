@@ -77,7 +77,7 @@ enum positions {
 
 	pthread_mutex_lock(&mutex)
 	while(!condition) {
-		pthread_cond_signal(&condition_t,&mutex) >> Imediatamente antes de dormir, libera o mutex!  <<
+		pthread_cond_wait(&condition_t,&mutex) >> Imediatamente antes de dormir, libera o mutex!  <<
 	}
 	>> Realiza tarefas necessários depois de ter obtido o sinal verdadeiro de condição <<
 	>> É implicito que quando sair do loop while, o mutex terá sido relocado <<
