@@ -3,7 +3,6 @@
 	It receives a control parameter from control unit to choose
 	between PC's or ALUOut's adresses content to send to the main memory.
 */
-
 #ifndef _MUX_2_IORD_
 #define _MUX_2_IORD_
 
@@ -11,6 +10,7 @@
 #include "mascara.h"
 
 #define PC 0
+extern int pc,aluout,cpu_clock;
 
 pthread_mutex_t control_sign;
 pthread_cond_t cs_ready;		// Should this condition be declared in control unit scope?
@@ -29,11 +29,13 @@ int mux_IorD_buffer;			// This must be declared as "extern int mux_IorD_buffer" 
  
 */
 
+
+// Este multiplexador não dependerá da execução de outras threads em um ciclo
 void mux_2_IorD(){
 	int last_clock = 10; 		// Local clock to keep track if thread has already executed.
 
 	while(valid_instruction){
-		if (!(last_clock == cpu_clock)){
+		if (last_clock != cpu_clock){
 			pthread_mutex_lock(&control_sign);
 			// This thread's routine won't go any further whilst mutex isn't locked.
 
@@ -54,7 +56,6 @@ void mux_2_IorD(){
 	
 			pthread_mutex_unlock(&control_sign);
 			pthread_barrier_wait(&current_cycle);		// Ilustrando o raciocínio acima de controle de ciclo
-			pthread_yield();
 			// Unlocks mutex and yields so another thread can do its job
 		}
 		else pthread_yield();

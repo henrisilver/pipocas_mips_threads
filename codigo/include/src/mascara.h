@@ -1,3 +1,5 @@
+#ifndef _MASCARA_
+#define _MASCARA_
 #define MAX 512
 #define CACHE_SET 8
 #define NUMREG 32
@@ -147,3 +149,23 @@ int S_C
 #define separa_COp5 0x20
 
 #define separa_bitmenos_sig 0x01
+
+enum positions {
+    RegDst_POS = 0,
+    RegWrite_POS,
+    ALUSrcA_POS,
+    ALUSrcB0_POS,
+    ALUSrcB1_POS,
+    ALUOp0_POS,
+    ALUOp1_POS,
+    PCSource0_POS,
+    PCSource1_POS,
+    PCWriteCond_POS,
+    PCWrite_POS,
+    IorD_POS,
+    MemRead_POS,
+    MemWrite_POS,
+    MemtoReg_POS,
+    IRWrite_POS
+};
+#endif
