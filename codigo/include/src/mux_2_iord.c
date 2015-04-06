@@ -12,7 +12,7 @@
 #define PC 0
 extern int pc,aluout,cpu_clock;
 
-pthread_mutex_t control_sign;
+extern pthread_mutex_t control_sign;
 pthread_cond_t cs_ready;		// Should this condition be declared in control unit scope?
 
 int mux_IorD_buffer;			// This must be declared as "extern int mux_IorD_buffer" in the file that will include present file.
