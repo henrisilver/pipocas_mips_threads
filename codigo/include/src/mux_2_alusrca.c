@@ -8,8 +8,13 @@
 
 extern int pc;
 extern int cpu_clock;
+extern int A_value;
+extern int pc_value;
+int mux_ALUSrcA_buffer;
 
-pthread_cond_t cs_ready;
+extern pthread_cond_t cs_ready;
+
+extern pthread_mutex_t control_sign;
 
 void mux_2_ALUSrcA()
 {
