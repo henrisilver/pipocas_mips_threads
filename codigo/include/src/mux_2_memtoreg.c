@@ -10,65 +10,51 @@
 #include "mascara.h"
 
 #define ALUOut 0
-extern int pc;
 extern int aluout;
 extern int cpu_clock;
-extern short int sc;
 extern int mdr;
+extern c_sign cs;
+int mux_MemtoReg_buffer;
 
-pthread_mutex_t mem_ir_mux;
-pthread_cond_t cs_ready;
-pthread_cond_t main_memory_read;
-
-typedef struct link{
-	int value;
-	int updated;
-}link;
-
-link input,output;
+extern pthread_mutex_t control_sign;
+extern pthread_cond_t control_sign_wait;
 
 /*
-	Devido ao não-determinismo no quesito de execução, não consigo garantir que a variável de condição seja suficiente para garantir
-a semântica de execução. Ou seja, tome por exemplo uma distribuição onde a memória será executada antes do multiplexador, espera-se que
-isso aconteça, certo? Certo. Mas e se acontecer o contrário? Bom, para isso colocamos o pthread_cond_wait. Porém há um problema quando o
-esperado acontece, a thread da memória, que executou primeiro, irá executar pthread_cond_signal e já que a thread deste mux não executou
-ainda, o sinal será perdido, resultando em um deadlock quando o pthread_cond_wait for executado.
+	>> Não haverá problema de dependências caso o dado usado seja de algum registrador, pois o dado usado já foi computado no ciclo anterior
 
-	Uma solução para esse problema, que creio ser boa e funcional, é a apresentada neste código. Foi criada uma estrutura que contém,
-além de uma variável para dado, uma variável flag que só será 1 caso a memória já tenha executado, e isso é garantido pelo mutex criado
-mem_ir_aux.
+	>> Agora é necessário garantir que qualquer computação no ciclo atual seja efetivada somente ao final do cilo, ou seja, depois que as
+outras unidades funcionais já usaram o dado do clico anterior
 
-	Opiniões, sugestões, soluções? por favor!
+	>> Entendo que o sinal de controle necessita ter uma flag com a informação de que o este sinal já foi atualizado no ciclo atual.
+Isso serve para tratar deadlocks.
 
-	Discussão de um futuro próximo: esse mux além de depender de algumas threads, será dependência de outras, então ainda deverão
-ser inseridos alguns comandos pthread_cond_signal().
+	>> Estou imaginando o seguinte:
+
+	typedef struct c_sign{
+		int short value;		// Inteiro que representa o sinal de controle
+		int isUpdated;			// 1 para atualizado e 0 caso contrário
+	}c_sign;
 
 */
 
+
+/*   */
 void mux_2_MemtoReg(){
 	int last_clock = 10;
 
-	while(valid_instruction){
+	while(ir){
 		if (last_clock != cpu_clock){
-			pthread_mutex_lock(&mem_ir_mux);
+			pthread_mutex_lock(&control_sign);
 
-			while(pthread_cond_wait(&cs_ready,&mem_ir_mux) != 0);
-			if(( (separa_MemtoReg & sc) >> MemtoReg_POS) & 0x01 == ALUOut){
-      				output.value = aluout;
-			}
-			else{
-				if (l.updated == 0)
-					while (pthread_cond_wait(&main_memory_read,&mem_ir_mux) != 0);
-				output.value = mdr;
-			}
+			if (!cs.isUpdated)
+				while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
 
-			pthread_mutex_lock(&mux_regs);
-			output.updated = 1;			// Sinaliza que o buffer esta atualizado
-			pthread_cond_signal(&mux_selected);
-			pthread_mutex_unlock(&mux_regs);
-			pthread_mutex_unlock(&mem_ir_mux);
+			pthread_mutex_unlock(&control_sign);
 
-			input.updated = 0;
+			if(( (separa_MemtoReg & cs.value) >> MemtoReg_POS) & 0x01 == ALUOut)
+      				mux_MemtoReg_buffer = aluout;
+			else mux_MemtoReg_buffer = mdr;
+
 			last_clock = cpu_clock;
 
 			pthread_barrier_wait(&current_cycle);
