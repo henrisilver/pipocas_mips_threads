@@ -8,6 +8,8 @@ extern int pc_value;
 extern int cpu_clock;
 extern int ir_value;
 
+extern pthread_mutex_t control_sign;
+
 int pc_shift_left_buffer;
 
 void PC_shift_left()
