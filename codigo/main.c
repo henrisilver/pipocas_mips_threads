@@ -75,7 +75,7 @@ int main (int argc, char *argv[])
     pthread_t A;
     pthread_t B;
     pthread_t and_or;
-  
+
                              //                                               ## fat(n) iterativo
     memoria[0] = 0x8db00000; // 1000 1101 1011 0000 0000 0000 0000 0000         lw $s0, 0($t5)       # carrega n da memoria
     memoria[1] = 0x11300005; // 0001 0001 0011 0000 0000 0000 0000 0101       loop: beq $t1, $s0, fim    # se der a cond. sai do loop
@@ -103,20 +103,30 @@ int main (int argc, char *argv[])
     reg[13] = 80; // $t5
     
     
-    while(IR! = 0) //Trocar instrução
-    {
-   
-        pthread_mutex_lock(&mutex_ciclo);
-        if(ciclo == 5)
-            ciclo = 0;
-        else
-            ciclo++;
-        pthread_mutex_unlock(&mutex_ciclo);
-        pthread_yield();
-        
+     while(loop) //Trocar instrução
+     {
+        control_unit(IR, &sc, 0);
+        Busca_Instrucao(sc, PC, ALUOUT, IR, &PCnew, &IRnew, &MDRnew);
+
+        control_unit(IR, &sc, 1);
+        ciclos = Decodifica_BuscaRegistrador(sc, IR, PC, A, B, &Anew, &Bnew, &ALUOUTnew);
+
+        while(i < ciclos)
+        {
+            // aqui comeca um novo ciclo
+            // abaixo estao as unidades funcionais que executarao em todos os ciclos
+            // os sinais de controle em sc impedirao/permitirao que a execucao seja, de fato, efetivada
+            control_unit(IR, &sc, ciclo);
+            //Busca_Instrucao(sc, PC, ALUOUT, IR, &PCnew, &IRnew, &MDRnew);
+
+            Execucao_CalcEnd_Desvio(sc, A, B, IR, PC, ALUOUT, &ALUOUTnew, &PCnew);
+            EscreveTipoR_AcessaMemoria(sc, B, IR, ALUOUT, PC, &MDRnew, &IRnew);
+            EscreveRefMem(sc, IR, MDR, ALUOUT);
+
+        }
     }
     // fim do while(loop)
-    
+
     // impressao da memoria para verificar se a implementacao esta correta
     // {
     //    int ii;
@@ -146,12 +156,12 @@ int main (int argc, char *argv[])
   //  printf("Error creating thread consumer! Exiting! \n");
   //  exit(0);
   // }
-  
+
   // printf("\n Thread pai vai esperar filhas.\n\n");
   // fflush(0);
 
   // pthread_join(prod_handle, 0);
   // pthread_join(cons_handle, 0);
-    
-    exit( 0);
+
+        exit( 0);
 } // fim de main
