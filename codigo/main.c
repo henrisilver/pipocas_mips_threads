@@ -102,10 +102,10 @@ int main (int argc, char *argv[])
     reg[12] = 84; // $t4
     reg[13] = 80; // $t5
     
-    pthread_mutex_lock(&mutex_IR);
+    
     while(IR! = 0) //Trocar instrução
     {
-        pthread_mutex_unlock(&mutex_ciclo);
+   
         pthread_mutex_lock(&mutex_ciclo);
         if(ciclo == 5)
             ciclo = 0;
@@ -113,10 +113,8 @@ int main (int argc, char *argv[])
             ciclo++;
         pthread_mutex_unlock(&mutex_ciclo);
         pthread_yield();
-        pthread_mutex_lock(&mutex_IR);
         
     }
-    pthread_mutex_unlock(&mutex_ciclo); 
     // fim do while(loop)
     
     // impressao da memoria para verificar se a implementacao esta correta
