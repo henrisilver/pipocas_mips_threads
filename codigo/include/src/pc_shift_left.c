@@ -4,25 +4,29 @@
 #include <pthread.h>
 #include "mascara.h"
 
-#define ALUOut 0
-
 extern int pc_var;
 extern int cpu_clock;
 extern int ir_var;
 
-int PC_shift_left_buffer;
+int pc_shift_left_buffer;
 
 void PC_shift_left()
 {
+    
+    int last_clock = 10;
+    
     while(valid_instruction)
     {
-		if (last_clock != cpu_clock)
-		{
-            PC_shift_left_buffer = (ir_var & 0x03ffffff) << 2;      //0000...00
+	if (last_clock != cpu_clock)
+	{
+            pc_shift_left_buffer = (ir_var & 0x03ffffff) << 2;      //0000...00
             pc_temp = (0x10000000 & pc_var);                        //pego somente os 4 bits mais significativos
-            PC_shift_left_buffer = (pc_temp | PC_shift_left_buffer)
+            pc_shift_left_buffer = (pc_temp | pc_shift_left_buffer)
         }
+        else pthread_yield();
     }
+    pthread_exit(0);
+
 }
 
 #endif
