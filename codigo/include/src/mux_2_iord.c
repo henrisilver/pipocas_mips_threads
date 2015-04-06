@@ -26,7 +26,7 @@ int mux_IorD_buffer;
 void mux_2_IorD(){
 	int last_clock = 10;
 
-	while(ir_value){
+	while(ir){
 		if (last_clock != cpu_clock){
 
 			pthread_mutex_lock(&control_sign);
