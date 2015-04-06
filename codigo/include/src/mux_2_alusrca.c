@@ -20,7 +20,7 @@ void mux_2_ALUSrcA()
 {
     int last_clock = 10;
 
-    while(valid_instruction)
+    while(ir_value)
     {
 		if (last_clock != cpu_clock)
 		{

@@ -18,7 +18,7 @@ extern int aluout_value
 extern c_sign cs;
 
 extern pthread_mutex_t control_sign;
-extern pthread_cond_t control_sign_ready;
+extern pthread_cond_t control_sign_wait;
 
 /* This file's global variable  */
 int mux_IorD_buffer;
@@ -31,7 +31,7 @@ void mux_2_IorD(){
 
 			pthread_mutex_lock(&control_sign);
 			if(!cs.isUpdated)
-				while(pthread_cond_wait(&cs_ready,&control_sign) != 0);
+				while(pthread_cond_wait(&control_sign_ready,&control_sign) != 0);
                         pthread_mutex_unlock(&control_sign);
 
 			if(( (separa_IorD & sc) >> IorD_POS) & 0x01 == PC){

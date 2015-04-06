@@ -2,17 +2,35 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h> // não sei se vamos precisar
+#include "mascara.h>"
 
 
 
 int main (int, char **);
-int ula( int, int , char, int *, char *, char *);
-void control_unit(int, short int *);
-void Busca_Instrucao(short int, int, int, int, int *, int *, int *);
-void Decodifica_BuscaRegistrador(short int, int, int, int, int, int *, int *, int *);
-void Execucao_CalcEnd_Desvio(short int, int, int, int, int, int, int *, int *);
-void EscreveTipoR_AcessaMemoria(short int, int, int, int, int, int *, int *);
-void EscreveRefMem(short int, int, int, int);
+// Abaixo, declarar prototipo de funcoes das threads, seguindo o modelo do exemplo abaixo:
+// int ula( int, int , char, int *, char *, char *);
+// void control_unit(int, short int *);
+// void Busca_Instrucao(short int, int, int, int, int *, int *, int *);
+// void Decodifica_BuscaRegistrador(short int, int, int, int, int, int *, int *, int *);
+// void Execucao_CalcEnd_Desvio(short int, int, int, int, int, int, int *, int *);
+// void EscreveTipoR_AcessaMemoria(short int, int, int, int, int, int *, int *);
+// void EscreveRefMem(short int, int, int, int);
+
+/****** VARIAVEIS GLOBAIS ***********/
+int pc = 0, aluout, mdr, IR = -1, A, B, alu_result, jump_address, BEQ_Address, memory_content_read, read_data_1, read_data_2, ciclo = 0;
+int memoria[MAX], reg[NUMREG];
+short int sc = 0;
+
+pthread_mutex_t control_sign;
+pthread_mutex_t mutex_ciclo;
+pthread_mutex_t mutex_IR;
+
+
+// Falta implementar as threads para as funcoes da ULA e do jump address (a thread do shift left 2 de
+// cima deve servir para computar o jump address). Variaveis que dependem dessas threads:
+// -> alu_result
+// -> jump_address
+
 
 /*
 Threads:
@@ -35,12 +53,7 @@ AND e OR: 1 thread, 1 funcao
 */
 
 int main (int argc, char *argv[])
-{
-    int PCnew = 0, IRnew, MDRnew, Anew, Bnew, ALUOUTnew;
-    int PC = 0, IR=-1, MDR, A, B, ALUOUT;   
-    short int sc = 0;
-    int nr_ciclos = 0;
-  
+{ 
     pthread_t control_unit;
     pthread_t PC;
     pthread_t mux_2_iord;
@@ -49,16 +62,16 @@ int main (int argc, char *argv[])
     pthread_t mux_2_alusrca;
     pthread_t mux_3_pcsource;
     pthread_t mux_4_alusrcb;
-    pthreat_t main_memory;
+    pthread_t main_memory;
     pthread_t instruction_register;
     pthread_t mdr;
-    pthreat_t registers_bank;
+    pthread_t registers_bank;
     pthread_t shift_left_pc;
     pthread_t shift_left_imm;
     pthread_t sign_ext;
     pthread_t alu;
-  pthread_t alu_control;
-  pthreat_t aluout;
+    pthread_t alu_control;
+    pthread_t aluout;
     pthread_t A;
     pthread_t B;
     pthread_t and_or;
@@ -89,48 +102,29 @@ int main (int argc, char *argv[])
     reg[12] = 84; // $t4
     reg[13] = 80; // $t5
     
-    while(loop) //Trocar instrução
+    
+    while(IR! = 0) //Trocar instrução
     {
-        control_unit(IR, &sc, 0);
-        Busca_Instrucao(sc, PC, ALUOUT, IR, &PCnew, &IRnew, &MDRnew);
-      
-        control_unit(IR, &sc, 1);
-        ciclos = Decodifica_BuscaRegistrador(sc, IR, PC, A, B, &Anew, &Bnew, &ALUOUTnew);
-      
-        while(i < ciclos)
-        {
-            // aqui comeca um novo ciclo
-            // abaixo estao as unidades funcionais que executarao em todos os ciclos
-            // os sinais de controle em sc impedirao/permitirao que a execucao seja, de fato, efetivada
-            control_unit(IR, &sc, ciclo);
-            //Busca_Instrucao(sc, PC, ALUOUT, IR, &PCnew, &IRnew, &MDRnew);
-
-            Execucao_CalcEnd_Desvio(sc, A, B, IR, PC, ALUOUT, &ALUOUTnew, &PCnew);
-            EscreveTipoR_AcessaMemoria(sc, B, IR, ALUOUT, PC, &MDRnew, &IRnew);
-            EscreveRefMem(sc, IR, MDR, ALUOUT);
-
-            // contador que determina quantos ciclos foram executados
-            nr_ciclos++;
-
-            // atualizando os registradores temporarios necessarios ao proximo ciclo.
-            PC = PCnew;
-            IR = IRnew;
-            MDR = MDRnew;
-            A = Anew;
-            B = Bnew;
-            ALUOUT = ALUOUTnew;
-        }
-    } // fim do while(loop)
+   
+        pthread_mutex_lock(&mutex_ciclo);
+        if(ciclo == 5)
+            ciclo = 0;
+        else
+            ciclo++;
+        pthread_mutex_unlock(&mutex_ciclo);
+        pthread_yield();
+        
+    }
+    // fim do while(loop)
     
     // impressao da memoria para verificar se a implementacao esta correta
-    {
-       int ii;
-       for (ii = 20; ii < 22; ii++)
-       {
-           printf("memoria[%d]=%ld \n", ii, memoria[ii]);
-       }
-       printf("Nr de ciclos executados =%d \n", nr_ciclos);
-    }
+    // {
+    //    int ii;
+    //    for (ii = 20; ii < 22; ii++)
+    //    {
+    //        printf("memoria[%d]=%ld \n", ii, memoria[ii]);
+    //    }
+    // }
 
   // Criacao de threads
   //    pthread_t prod_handle, cons_handle;
@@ -161,194 +155,3 @@ int main (int argc, char *argv[])
     
     exit( 0);
 } // fim de main
-
-/////////////////////////////////////////////////////////////////////
-//////////////// UNIDADE DE CONTROLE ////////////////////////////////
-/////////////////////////////////////////////////////////////////////
-// Agrupamento do sinal de saida: bits [15...0] = sinais de controle
-//                                bits [17, 16] = AddrClt
-void gera_sinal_controle (int *output, char S)
-{
-    // Todos os sinais sao resetados por default (don't care = 0)
-    *output = 0x00000000;
-    
-    // Estado 0 - Instruction fetch
-    if (S == 0x00)
-    {
-        *output = *output | ativa_MemRead;
-        *output = *output & desativa_ALUSrcA;
-        *output = *output & desativa_IorD;
-        *output = *output | ativa_IRWrite;
-        *output = *output | ativa_ALUSrcB0;
-        *output = *output & desativa_ALUSrcB1;
-        *output = *output & desativa_ALUOp0;
-        *output = *output & desativa_ALUOp1;
-        *output = *output | ativa_PCWrite;
-        *output = *output & desativa_PCSource0;
-        *output = *output & desativa_PCSource1;
-        
-        // Controle de sequenciamento
-        *output = *output | sequencia;
-    }
-    
-    // Estado 1 - Instruction decode/register fetch
-    else if (S == 0x01)
-    {
-        *output = *output & desativa_ALUSrcA;
-        *output = *output | ativa_ALUSrcB0;
-        *output = *output | ativa_ALUSrcB1;
-        *output = *output & desativa_ALUOp0;
-        *output = *output & desativa_ALUOp1;
-    
-        *output = *output | tab_desp1;
-    }
-    
-    // Estado 2 - Memory address computation
-    else if (S == 0x02)
-    {
-        *output = *output | ativa_ALUSrcA;
-        *output = *output & desativa_ALUSrcB0;
-        *output = *output | ativa_ALUSrcB1;
-        *output = *output & desativa_ALUOp0;
-        *output = *output & desativa_ALUOp1;
-        
-        *output = *output | tab_desp2;
-    }
-    
-    // Estado 3 - Memory Acess
-    else if (S == 0x03)
-    {
-        *output = *output | ativa_MemRead;
-        *output = *output | ativa_IorD;
-        
-        *output = *output | sequencia;
-    }
-    
-    // Estado 4 - Write-back step
-    else if (S == 0x04)
-    {
-        *output = *output & desativa_RegDst;
-        *output = *output | ativa_RegWrite;
-        *output = *output | ativa_MemtoReg;
-        
-        *output = *output | volta_busca;
-    }
-    
-    // Estado 5 - Memory Acess
-    else if (S == 0x05)
-    {
-        *output = *output | ativa_MemWrite;
-        *output = *output | ativa_IorD;
-        
-        *output = *output | volta_busca;
-    }
-    
-    // Estado 6 - Execution
-    else if (S == 0x06)
-    {
-        *output = *output | ativa_ALUSrcA;
-        *output = *output & desativa_ALUSrcB0;
-        *output = *output & desativa_ALUSrcB1;
-        *output = *output & desativa_ALUOp0;
-        *output = *output | ativa_ALUOp1;
-        
-        *output = *output | sequencia;
-    }
-    
-    // Estado 7 - R-type completion
-    else if (S == 0x07)
-    {
-        *output = *output | ativa_RegDst;
-        *output = *output | ativa_RegWrite;
-        *output = *output & desativa_MemtoReg;
-        
-        *output = *output | volta_busca;
-    }
-    
-    // Estado 8 - Branch completion
-    else if (S == 0x08)
-    {
-        *output = *output | ativa_ALUSrcA;
-        *output = *output & desativa_ALUSrcB0;
-        *output = *output & desativa_ALUSrcB1;
-        *output = *output | ativa_ALUOp0;
-        *output = *output & desativa_ALUOp1;
-        *output = *output | ativa_PCWriteCond;
-        *output = *output | ativa_PCSource0;
-        *output = *output & desativa_PCSource1;
-        
-        *output = *output | volta_busca;
-    }
-    
-    // Estado 9 - Jump completion
-    else if (S == 0x09)
-    {
-        *output = *output | ativa_PCWrite;
-        *output = *output & desativa_PCSource0;
-        *output = *output | ativa_PCSource1;
-        
-        *output = *output | volta_busca;
-    }
-}//fecha void gera_sinal_controle (int *output, char S)
-
-void control_unit(int IR, short int *sc, int cycle)
-{
-  int sinal;
-    char S;
-    char op = ((IR & separa_cop) >> 26) & 0x3f;
-  switch(cycle)
-    {
-        case 0:
-          /*Busca Instrução 1 Estado
-              Gera sinais de controle
-            */
-          S = 0;
-        break;
-      
-        case 1:
-          /*Decodifica 2 Estados
-              Gera novos sinais de controle
-            */
-          S = 1;
-        break;
-      
-        case 2:
-          /* Dependererá do IR. IFS?
-            if(branch) Gera sinais p branch
-      else if(add) gera sinais p add
-            add,sub,lw,sw
-            */
-          if(op == 2)//jump
-              S = 9;
-            else if(op == 4)//beq
-              S = 8;
-            else if(op == 0)//r-type
-              S = 6;
-            else if(op == 35 || op == 43)//lw ou sw
-              S = 2;
-        break;
-      
-        case 3:
-          /*
-            
-            */
-            if(op == 0)//r-type
-              S = 7;
-            else if(op == 35) //lw ou sw
-              S = 3;
-            else if(op == 43) //lw ou sw
-              S = 5;
-        break;
-      
-        case 4: // Somente executara no caso da instrucao lw
-          S = 4;
-        break;
-    }
-    gera_sinal_controle (&sinal, S);
-    *sc = output_signals & 0x0000ffff;
-    // broadcast(sc);
-}
-              
-/////////////////////////////////////////////////////////////////////
-//////////////// FIM UNIDADE DE CONTROLE ////////////////////////////
-/////////////////////////////////////////////////////////////////////
