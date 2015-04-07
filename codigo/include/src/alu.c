@@ -19,7 +19,7 @@
 #include "mascara.h"
 
 extern int alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer;
-extern char zero, ula_op;
+extern char zero, alu_control;
 extern char alu_overflow;
 
 void add(int *alu_result, int a, int b, char *overflow);
@@ -37,35 +37,35 @@ void somador_completo (char *result_op, char a, char b, char * c_out, char c_in)
 // }
 //
 // Demais casos                    ALU_A = xxx, ALU_B = xxx   e ALU_control = xxx (don't care)
-// Argumentos da alu no trabalho de org: int a, int b, char ula_op, int *result_ula, char *zero, char *overflow
+// Argumentos da alu no trabalho de org: int a, int b, char alu_op, int *result_ula, char *zero, char *overflow
 void alu (void * not_used) {
     
     // Caso que o codigo de operacao indica uma soma
-    if (ula_op == ativa_soma)
+    if (alu_control == ativa_soma)
     {
         add(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
     }
     
     // Caso que o codigo de operacao indica uma subtracao
-    else if (ula_op == ativa_subtracao)
+    else if (alu_control == ativa_subtracao)
     {
         sub(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
     }
     
     // Caso que o codigo de operacao indica uma operacao and
-    else if (ula_op == ativa_and)
+    else if (alu_control == ativa_and)
     {
         and(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
     }
     
     // Caso que o codigo de operacao indica uma operacao or
-    else if (ula_op == ativa_or)
+    else if (alu_control == ativa_or)
     {
         or(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
     }
     
     // Caso que o codigo de operacao indica uma operacao slt
-    else if (ula_op == ativa_slt)
+    else if (alu_control == ativa_slt)
     {
         slt(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
     }
