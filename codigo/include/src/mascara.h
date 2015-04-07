@@ -35,6 +35,12 @@ int S_C
 15-IREsc		(IRWrite)
 */
 
+#define op_r_type 0
+#define op_jump 2
+#define op_beq 4
+#define op_lw 35
+#define op_sw 43
+
 // mascaras
 // usadas para ativar e desativar o bit zero. Atuam na variavel global zero (um char - 8bits)
 #define ativa_bit_zero        0x01	// 00000001		usada com |

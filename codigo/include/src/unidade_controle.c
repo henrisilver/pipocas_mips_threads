@@ -172,13 +172,13 @@ void control_unit(int IR, short int *sc, int cycle)
       else if(add) gera sinais p add
             add,sub,lw,sw
             */
-          if(op == 2)//jump
+          if(op == op_jump)//jump
               S = 9;
-            else if(op == 4)//beq
+            else if(op == op_beq)//beq
               S = 8;
-            else if(op == 0)//r-type
+            else if(op == op_r_type)//r-type
               S = 6;
-            else if(op == 35 || op == 43)//lw ou sw
+            else if(op == op_lw || op == op_sw)//lw ou sw
               S = 2;
         break;
       
@@ -186,11 +186,11 @@ void control_unit(int IR, short int *sc, int cycle)
           /*
             
             */
-            if(op == 0)//r-type
+            if(op == op_r_type)//r-type
               S = 7;
-            else if(op == 35) //lw ou sw
+            else if(op == op_lw) //lw ou sw
               S = 3;
-            else if(op == 43) //lw ou sw
+            else if(op == op_sw) //lw ou sw
               S = 5;
         break;
       
