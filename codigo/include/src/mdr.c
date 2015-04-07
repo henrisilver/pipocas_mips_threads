@@ -3,17 +3,16 @@
 	>> Therefore, it updates between barrier that indicates the end of execution and barrier
 	indicates the end of updating data.
 */
-#ifndef _INSTRUCTION_REGISTER_
-#define _INSTRUCTION_REGISTER_
+#ifndef _MDR_
+#define _MDR_
 
 #include <pthread.h>
 #include "mascara.h"
 
-#define IRWrite 1
 extern int cpu_clock;
 extern int memory_content_read;
 extern c_sign cs;
-int ir;
+int mdr;
 
 extern pthread_mutex_t control_sign;
 extern pthread_cond_t control_sign_wait;
@@ -21,7 +20,7 @@ extern pthread_barrier_t current_cycle;
 extern pthread_barrier_t update_registers;
 
 /* This file's global variable  */
-void Instruction_Register(){
+void mdr(){
         int last_clock = 10;
 
         while(ir){
@@ -35,9 +34,7 @@ void Instruction_Register(){
                         last_clock = cpu_clock;
                         pthread_barrier_wait(&current_cycle);
 
-			if(( (separa_IRWrite & cs.value) >> IRWrite_POS) & 0x01 == IRWrite){
-                                ir = memory_content_read;
-                        }
+                        mdr = memory_content_read;
 
 			pthread_barrier_wait(&update_registers);
                 }
