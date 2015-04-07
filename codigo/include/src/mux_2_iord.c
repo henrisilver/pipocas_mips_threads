@@ -34,7 +34,7 @@ void mux_2_IorD(){
 				while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
                         pthread_mutex_unlock(&control_sign);
 
-			if(( (separa_IorD & sc) >> IorD_POS) & 0x01 == PC){
+			if(( (separa_IorD & cs.value) >> IorD_POS) & 0x01 == PC){
       				mux_IorD_buffer = pc_value;
 			}
 			else mux_IorD_buffer = aluout_value;
