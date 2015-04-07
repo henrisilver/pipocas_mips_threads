@@ -18,7 +18,7 @@
 /****** VARIAVEIS GLOBAIS ***********/
 int pc = 0, aluout, mdr, ir = -1, a_value, b_value, alu_result, jump_address, BEQ_Address, memory_content_read, read_data_1, read_data_2, cpu_clock = 10;
 int memoria[MAX], reg[NUMREG];
-char zero, alu_overflow, alu_control;
+char zero, alu_overflow;
 short int sc = 0;
 
 pthread_mutex_t control_sign;

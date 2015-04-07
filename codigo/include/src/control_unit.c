@@ -157,6 +157,8 @@ void control_unit(void *not_used)
 {
     int sinal;
     char S;
+    pthread_mutex_init(&control_sign, NULL);
+    pthread_cond_init(&control_sign_wait, NULL);
     char op = ((ir & separa_cop) >> 26) & 0x3f;
     while(ir)
     {
@@ -210,13 +212,14 @@ void control_unit(void *not_used)
             pthread_cond_broadcast(&control_sign_wait);
             pthread_mutex_unlock(&control_sign);
             pthread_barrier_wait(&current_cycle);
-            
+            pthread_barrier_destroy(&current_cycle);
             cs.updated = 0;
             
             pthread_barrier_wait(&update_registers);
         }
         else pthread_yield();
     }
+    pthread_cond_destroy(&control_sign_wait);
     pthread_exit(0);
 }
 #endif

@@ -20,15 +20,29 @@
 #include "mascara.h"
 
 extern int ir;
-extern pthread_mutex_t alu_control_sign;
+extern pthread_mutex_t control_sign;
 extern pthread_cond_t control_sign_wait;
+extern pthread_barrier_t current_cyle, update_registers;
+
+pthread_cond_t alu_sign_wait;
+pthread_mutex_t alu_sign;
+
+typedef struct alu_sign{
+    char value;        // Inteiro que representa o sinal de controle
+    int isUpdated;          // 1 para atualizado e 0 caso contrário
+}alu_sign;
+
+alu_sign alu_s;
 
 // Recebe o campo de funcao e o sinal de controle ALUOp, e determina qual sera o sinal enviado a ula
-void ALU_control_calc(void *not_used)
+void alu_control(void *not_used)
 {
     int last_clock = 10;
     char alu_op;
+    char alu_control_sign;
     char cfuncao;
+    pthread_mutex_init(&alu_sign, NULL);
+    pthread_cond_init(&alu_sign_wait, NULL);
 
     while(ir){
         if (last_clock != cpu_clock){
@@ -39,33 +53,44 @@ void ALU_control_calc(void *not_used)
             
             pthread_mutex_unlock(&control_sign);
             
-            alu_op = (((separa_ALUOp0 | separa_ALUOp1) & sc) >> ALUOp0_POS) & 0x03;
+            alu_op = (((separa_ALUOp0 | separa_ALUOp1) & cs.value) >> ALUOp0_POS) & 0x03;
             cfuncao = (ir & separa_cfuncao);
             if (alu_op == 0x00)       // UC forca uma soma
-                alu_control = ativa_soma;
+                alu_control_sign = ativa_soma;
     
             if (alu_op == 0x01)       // UC forca uma subtracao
-                alu_control = ativa_subtracao;
+                alu_control_sign = ativa_subtracao;
     
             if (alu_op == 0x02)       // UC nao sabe o que fazer
             {
-                cfuncao = cfuncao & zera_2bits_cfuncao;         // cfuncao    op. na ula
+                cfuncao = cfuncao & zera_2bits_cfuncao;         // cfuncao       op. na ula
                 if (cfuncao == 0x00)                            // 10 0000       add
-                    alu_control = ativa_soma;                   // 10 0010       sub
+                    alu_control_sign = ativa_soma;              // 10 0010       sub
                 if (cfuncao == 0x02)                            // 10 0100       and
-                    alu_control = ativa_subtracao;              // 10 0101       or
+                    alu_control_sign = ativa_subtracao;         // 10 0101       or
                 if (cfuncao == 0x04)                            // 10 1010       slt
-                    alu_control = ativa_and;
+                    alu_control_sign = ativa_and;
                 if (cfuncao == 0x05)
-                    alu_control = ativa_or;
+                    alu_control_sign = ativa_or;
                 if (cfuncao == 0x0a)
-                    alu_control = ativa_slt;
+                    alu_control_sign = ativa_slt;
             }
 
-            pthread_barrier_wait(&current_cycle);
+            pthread_mutex_lock(&alu_sign);          //trava a variavel de alucontrol para passar para alu
+            alu_s.value = alu_control_sign;         //atualiza o valor na alucontrol depois da verificacao de qual comando estaria sendo enviado
+            alu_s.updated = 1;                      //sinaliza que pode ser lido, a variavel esta atualizada para este ciclo
+            pthread_cond_signal(&alu_sign_wait);    //sinaliza para a alu que o dado esta pronto para consumo
+            pthread_mutex_unlock(&alu_sign);        //abdica do mutex para a variavel da alucontrol
+            pthread_barrier_wait(&current_cycle);   //sinaliza que os deveres desta thread foram concluidos
+            
+            alu_s.updated = 0;
+            
+            pthread_barrier_wait(&update_registers);//espera as threads completarem para retornar ao estado 0 da maq. de estados
         }
         else pthread_yield();
     }
+    pthread_cond_destroy(&alu_sign_wait);
+    pthread_mutex_destroy(&alu_sign);
     pthread_exit(0);
 }
 
