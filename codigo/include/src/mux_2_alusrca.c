@@ -8,8 +8,8 @@
 
 extern int pc;
 extern int cpu_clock;
-extern int A_value;
-extern int pc_value;
+extern int a_value;
+extern int pc;
 int mux_ALUSrcA_buffer;
 
 extern pthread_cond_t cs_ready;
@@ -32,12 +32,12 @@ void mux_2_ALUSrcA()
 			//seguindo a logica dos outros muxes, tenho o mutex e a uc mandou o sinal verde
 			if(( (separa_ALUSrcA & sc) >> ALUSrcA_POS) & 0x01 == 0)//verifico qual a entrada do mux
 	    		{
-				 mux_ALUSrcA_buffer = pc_value;
+				 mux_ALUSrcA_buffer = pc;
 	
 			}
 			else
 	            	{//entrada vem de A
-	                	mux_ALUSrcA_buffer = A_value;
+	                	mux_ALUSrcA_buffer = a_value;
 	        	}
 	
 	    		last_clock = cpu_clock;

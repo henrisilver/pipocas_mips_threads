@@ -11,7 +11,7 @@
 
 #define ALUOut 0
 extern int cpu_clock;
-extern int B_value;
+extern int b_value;
 extern int sign_extend_value;
 extern int shift_left2_value;
 extern c_sign;
@@ -34,7 +34,7 @@ void mux_4_ALUSrcB(){
 			pthread_mutex_unlock(&control_sign);
 
 			if((((separa_ALUSrcB0 | separa_ALUSrcB1) & cs.value) >> ALUSrcB0_POS) & 0x03 == 0)
-				mux_ALUSrcB_buffer = B_value;		// B register value
+				mux_ALUSrcB_buffer = b_value;		// B register value
 			else if((((separa_ALUSrcB0 | separa_ALUSrcB1) & cs.value) >> ALUSrcB0_POS) & 0x03 == 1)
 				mux_ALUSrcB_buffer = 4;			// PC's increment
 			else if((((separa_ALUSrcB0 | separa_ALUSrcB1) & cs.value) >> ALUSrcB0_POS) & 0x03 == 2)
