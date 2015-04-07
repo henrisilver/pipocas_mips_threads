@@ -1,15 +1,24 @@
 /*
-	File with implementation of ALU routine.
-	It receives a control parameter from the ALU control unit which
-	indicates what kind of operation the ALU should perform.
+    File with implementation of ALU routine.
+    It receives a control parameter from the ALU control unit which
+    indicates what kind of operation the ALU should perform.
 */
-#ifndef _MUX_2_MEMTOREG_
-#define _MUX_2_MEMTOREG_
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+// FALTA: IMPLEMENTAR MUTEXES, BARREIRAS E VARIAVEIS DE CONDICAO
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+/*********************************************************************/
+#ifndef _ALU_
+#define _ALU_
 
 #include <pthread.h>
 #include "mascara.h"
 
-extern int alu_result, a_value, b_value;
+extern int alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer;
 extern char zero, ula_op;
 extern char alu_overflow;
 
@@ -34,31 +43,31 @@ void alu (void * not_used) {
     // Caso que o codigo de operacao indica uma soma
     if (ula_op == ativa_soma)
     {
-        add(&alu_result, a_value, b_value, &overflow);
+        add(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
     }
     
     // Caso que o codigo de operacao indica uma subtracao
     else if (ula_op == ativa_subtracao)
     {
-        sub(&alu_result, a_value, b_value, &overflow);
+        sub(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
     }
     
     // Caso que o codigo de operacao indica uma operacao and
     else if (ula_op == ativa_and)
     {
-        and(&alu_result, a_value, b_value);
+        and(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
     }
     
     // Caso que o codigo de operacao indica uma operacao or
     else if (ula_op == ativa_or)
     {
-        or(&alu_result, a_value, b_value);
+        or(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
     }
     
     // Caso que o codigo de operacao indica uma operacao slt
     else if (ula_op == ativa_slt)
     {
-        slt(&alu_result, a_value, b_value);
+        slt(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
     }
     
     // Se o resultado da ula for zero, o retorno *zero eh setado.
@@ -199,8 +208,8 @@ void and (int *result_op, int a, int b)
      entao a operacao bitwise AND, guardando o resultado em result_op */
     for (i = 0; i < BITS_PER_BYTE * sizeof(int); i++)
     {
-        u = ((a << i) >> 31) & 1;	/* Isolamos o bit da vez de a na posicao menos significativa */
-        v = ((b << i) >> 31) & 1;	/* Isolamos o bit da vez de b na posicao menos significativa */
+        u = ((a << i) >> 31) & 1;   /* Isolamos o bit da vez de a na posicao menos significativa */
+        v = ((b << i) >> 31) & 1;   /* Isolamos o bit da vez de b na posicao menos significativa */
         
         /* Para guardar o resultado, basta fazer uma operacao OR entre o resultado e @u e @v ANDed deslocados
          de volta para a posicao correta, o que setara os bits iguais a 1 no resultado */
@@ -222,8 +231,8 @@ void or(int *result_op, int a, int b)
      entao a operacao bitwise AND, guardando o resultado em result_op */
     for (i = 0; i < BITS_PER_BYTE * sizeof(int); i++)
     {
-        u = ((a << i) >> 31) & 1;	/* Isolamos o bit da vez de a na posicao menos significativa */
-        v = ((b << i) >> 31) & 1;	/* Isolamos o bit da vez de b na posicao menos significativa */
+        u = ((a << i) >> 31) & 1;   /* Isolamos o bit da vez de a na posicao menos significativa */
+        v = ((b << i) >> 31) & 1;   /* Isolamos o bit da vez de b na posicao menos significativa */
         
         /* Para guardar o resultado, basta fazer uma operacao OR entre o resultado e @u e @v ANDed deslocados
          de volta para a posicao correta, o que setara os bits iguais a 1 no resultado */
