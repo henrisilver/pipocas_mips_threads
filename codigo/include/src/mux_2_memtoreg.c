@@ -39,7 +39,7 @@ Isso serve para tratar deadlocks.
 
 
 /*   */
-void mux_2_MemtoReg(){
+void mux_2_MemtoReg(void *not_used){
 	int last_clock = 10;
 
 	while(ir){

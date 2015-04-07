@@ -14,7 +14,7 @@ int mux_ALUSrcA_buffer;
 extern pthread_cond_t control_sign_wait;
 extern pthread_mutex_t control_sign;
 
-void mux_2_ALUSrcA()
+void mux_2_ALUSrcA(void *not_used)
 {
     int last_clock = 10;
 
