@@ -23,7 +23,7 @@ extern pthread_cond_t control_sign_wait;
 /* This file's global variable  */
 int mux_IorD_buffer;
 
-void mux_2_IorD(){
+void mux_2_IorD(void *not_used){
 	int last_clock = 10;
 
 	while(ir){

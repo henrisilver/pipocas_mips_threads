@@ -21,7 +21,7 @@ extern pthread_cond_t control_sign_wait;
 
 int mux_MemtoReg_buffer;
 
-void mux_4_ALUSrcB(){
+void mux_4_ALUSrcB(void *not_used){
 	int last_clock = 10;
 
 	while(ir){

@@ -18,9 +18,10 @@
 #include <pthread.h>
 #include "mascara.h"
 
-extern int alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer;
+extern int alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, ir, cpu_clock;
 extern char zero, alu_control;
 extern char alu_overflow;
+extern pthread_mutex_t alu_control_sign;
 
 void add(int *alu_result, int a, int b, char *overflow);
 void sub(int *alu_result, int a, int b, char *overflow);
@@ -39,7 +40,15 @@ void somador_completo (char *result_op, char a, char b, char * c_out, char c_in)
 // Demais casos                    ALU_A = xxx, ALU_B = xxx   e ALU_control = xxx (don't care)
 // Argumentos da alu no trabalho de org: int a, int b, char alu_op, int *result_ula, char *zero, char *overflow
 void alu (void * not_used) {
-    
+    int last_clock = 10;
+
+    while(ir){
+        if (last_clock != cpu_clock){
+
+            pthread_mutex_lock(&control_sign);
+            if(!cs.isUpdated)
+                while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
+                        pthread_mutex_unlock(&control_sign);
     // Caso que o codigo de operacao indica uma soma
     if (alu_control == ativa_soma)
     {

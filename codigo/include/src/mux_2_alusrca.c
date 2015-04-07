@@ -16,7 +16,7 @@ extern pthread_cond_t cs_ready;
 
 extern pthread_mutex_t control_sign;
 
-void mux_2_ALUSrcA()
+void mux_2_ALUSrcA(void *not_used)
 {
     int last_clock = 10;
 

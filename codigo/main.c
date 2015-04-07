@@ -105,27 +105,27 @@ int main (int argc, char *argv[])
     
      while(ir) //Trocar instrução
      {  
-        cpu_clock = 0; 
         pthread_barrier_init(&update_registers, NULL, (unsigned int)NUM_THREADS_WITH_REGISTERS_TO_UPDATE);
+        cpu_clock = 0; 
         pthread_barrier_wait(&update_registers);
         pthread_barrier_destroy(&update_registers);
        
-        cpu_clock++;
         pthread_barrier_init(&update_registers, NULL, (unsigned int)NUM_THREADS_WITH_REGISTERS_TO_UPDATE);
+        cpu_clock++;
         pthread_barrier_wait(&update_registers);
         pthread_barrier_destroy(&update_registers);
        
        /* Aqui o segundo ciclo já foi executado por completo. Precisamos saber qual o tipo de instrução para continuarmos executando */
      
-      char opcode = ((ir & separa_cop) >> 26) & 0x3f;
+        char opcode = ((ir & separa_cop) >> 26) & 0x3f;
         if (opcode == op_beq || opcode == op_jump) cycles = 2;
         else if (opcode == op_lw) cycles = 4;
         else cycles = 3; // caso do op_sw e op_r_type
          
         while(cpu_clock < cycles) /*nao*/
         {
-            cpu_clock++;
           pthread_barrier_init(&update_registers, NULL, (unsigned int)NUM_THREADS_WITH_REGISTERS_TO_UPDATE);
+          cpu_clock++;
           pthread_barrier_wait(&update_registers);
           pthread_barrier_destroy(&update_registers);
         }
