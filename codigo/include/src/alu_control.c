@@ -61,11 +61,12 @@ void ALU_control_calc(void *not_used)
                 if (cfuncao == 0x0a)
                     alu_control = ativa_slt;
             }
-            
+
             pthread_barrier_wait(&current_cycle);
         }
         else pthread_yield();
     }
+    pthread_exit(0);
 }
 
 #endif
