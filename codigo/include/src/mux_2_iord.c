@@ -31,7 +31,7 @@ void mux_2_IorD(){
 
 			pthread_mutex_lock(&control_sign);
 			if(!cs.isUpdated)
-				while(pthread_cond_wait(&control_sign_ready,&control_sign) != 0);
+				while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
                         pthread_mutex_unlock(&control_sign);
 
 			if(( (separa_IorD & sc) >> IorD_POS) & 0x01 == PC){
