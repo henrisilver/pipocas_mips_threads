@@ -10,7 +10,7 @@
 #include "mascara.h"
 
 extern int cpu_clock;
-extern int aluresult;
+extern int alu_result;
 extern c_sign cs;
 int aluout;
 
