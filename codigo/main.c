@@ -4,9 +4,8 @@
 #include <semaphore.h> // não sei se vamos precisar
 #include "mascara.h>"
 
+#define NUM_THREADS_WITH_REGISTERS_TO_UPDATE 8 // 7 threads + 1 (main)
 
-
-int main (int, char **);
 // Abaixo, declarar prototipo de funcoes das threads, seguindo o modelo do exemplo abaixo:
 // int ula( int, int , char, int *, char *, char *);
 // void control_unit(int, short int *);
@@ -17,7 +16,7 @@ int main (int, char **);
 // void EscreveRefMem(short int, int, int, int);
 
 /****** VARIAVEIS GLOBAIS ***********/
-int pc = 0, aluout, mdr, IR = -1, A, B, alu_result, jump_address, BEQ_Address, memory_content_read, read_data_1, read_data_2, ciclo = 0;
+int pc = 0, aluout, mdr, ir = -1, A, B, alu_result, jump_address, BEQ_Address, memory_content_read, read_data_1, read_data_2, cpu_clock = 10;
 int memoria[MAX], reg[NUMREG];
 short int sc = 0;
 
@@ -103,26 +102,31 @@ int main (int argc, char *argv[])
     reg[13] = 80; // $t5
     
     
-     while(loop) //Trocar instrução
-     {
-        control_unit(IR, &sc, 0);
-        Busca_Instrucao(sc, PC, ALUOUT, IR, &PCnew, &IRnew, &MDRnew);
-
-        control_unit(IR, &sc, 1);
-        ciclos = Decodifica_BuscaRegistrador(sc, IR, PC, A, B, &Anew, &Bnew, &ALUOUTnew);
-
-        while(i < ciclos)
+     while(ir) //Trocar instrução
+     {  
+        cpu_clock = 0; 
+        pthread_barrier_init(&update_registers, NULL, (unsigned int)NUM_THREADS_WITH_REGISTERS_TO_UPDATE);
+        pthread_barrier_wait(&update_registers);
+        pthread_barrier_destroy(&update_registers);
+       
+        cpu_clock++;
+        pthread_barrier_init(&update_registers, NULL, (unsigned int)NUM_THREADS_WITH_REGISTERS_TO_UPDATE);
+        pthread_barrier_wait(&update_registers);
+        pthread_barrier_destroy(&update_registers);
+       
+       /* Aqui o segundo ciclo já foi executado por completo. Precisamos saber qual o tipo de instrução para continuarmos executando */
+     
+      char opcode = ((ir & separa_cop) >> 26) & 0x3f;
+        if (opcode == op_beq || opcode == op_jump) cycles = 2;
+        else if (opcode == op_lw) cycles = 4;
+        else cycles = 3; // caso do op_sw e op_r_type
+         
+        while(cpu_clock < cycles) /*nao*/
         {
-            // aqui comeca um novo ciclo
-            // abaixo estao as unidades funcionais que executarao em todos os ciclos
-            // os sinais de controle em sc impedirao/permitirao que a execucao seja, de fato, efetivada
-            control_unit(IR, &sc, ciclo);
-            //Busca_Instrucao(sc, PC, ALUOUT, IR, &PCnew, &IRnew, &MDRnew);
-
-            Execucao_CalcEnd_Desvio(sc, A, B, IR, PC, ALUOUT, &ALUOUTnew, &PCnew);
-            EscreveTipoR_AcessaMemoria(sc, B, IR, ALUOUT, PC, &MDRnew, &IRnew);
-            EscreveRefMem(sc, IR, MDR, ALUOUT);
-
+            cpu_clock++;
+          pthread_barrier_init(&update_registers, NULL, (unsigned int)NUM_THREADS_WITH_REGISTERS_TO_UPDATE);
+          pthread_barrier_wait(&update_registers);
+          pthread_barrier_destroy(&update_registers);
         }
     }
     // fim do while(loop)
@@ -165,3 +169,4 @@ int main (int argc, char *argv[])
 
         exit( 0);
 } // fim de main
+
