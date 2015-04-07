@@ -24,7 +24,7 @@ int mux_MemtoReg_buffer;
 void mux_4_ALUSrcB(){
 	int last_clock = 10;
 
-	while(ir_value){
+	while(ir){
 		if (last_clock != cpu_clock){
 			pthread_mutex_lock(&control_sign);
 
