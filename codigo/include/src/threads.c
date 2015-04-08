@@ -101,98 +101,6 @@ enum positions {
 	
  */
 
-
-void mux_2_IorD (){
-  //mutex lock
-    if(( (separa_IorD & sc) >> IorD_POS) & 0x01 == 0)
-      mux_IorD_buffer = pc;
-    else 
-      mux_IorD_buffer = aluout;
-}
-void mux_2_MemtoReg(){
-  //mutex lock
-    if(( (separa_MemtoReg & sc) >> MemtoReg_POS) & 0x01 == 0)
-      mux_MemtoReg_buffer = aluout;
-    else 
-      mux_MemtoReg_buffer = mdr;
-}
-
-void mux_2_RegDst (){
-  //mutex lock
-    if(( (separa_RegDst & sc) >> RegDst_POS) & 0x01 == 0)
-      mux_RegDst_buffer = ((IR & separa_rt) >> 16) & 0x0000001f;
-    else 
-      mux_RegDst_buffer = ((IR & separa_rd) >> 11) & 0x0000001f;
-}
-
-void mux_2_ALUSrcA (){
-  //mutex lock
-    if(( (separa_ALUSrcA & sc) >> ALUSrcA_POS) & 0x01 == 0)
-      mux_ALUSrcA_buffer = pc;
-    else 
-      mux_ALUSrcA_buffer = A;
-}
-
-void mux_3_PCSoure (){
-  //mutex lock
-    if((((separa_PCSource0 | separa_PCSource1) & sc) >> PCSource0_POS) & 0x03 == 0)
-      mux_PCSource_buffer = alu_result;
-    else if((((separa_PCSource0 | separa_PCSource1) & sc) >> PCSource0_POS) & 0x03 == 1)
-      mux_PCSource_buffer = aluout;
-    else
-        mux_PCSource_buffer = jump_address;
-}
-
-void mux_4_ALUSrcB (){
-  //mutex lock
-  if((((separa_ALUSrcB0 | separa_ALUSrcB1) & sc) >> ALUSrcB0_POS) & 0x03 == 0)
-    mux_ALUSrcB_buffer = B;
-  else if((((separa_ALUSrcB0 | separa_ALUSrcB1) & sc) >> ALUSrcB0_POS) & 0x03 == 1)
-      mux_ALUSrcB_buffer = FOUR;
-    else if((((separa_ALUSrcB0 | separa_ALUSrcB1) & sc) >> ALUSrcB0_POS) & 0x03 == 2)
-      mux_ALUSrcB_buffer = BEQ_Adress;
-    else
-        mux_ALUSrcB_buffer = BEQ_Adress << 2;  
-}
-
-void escreve_PC (){
-  //mutex lock de PC e PCSource_buffer
-  // INCLUIR CHECAGEM DO SINAL PARA VERIFICAR SE ESCREVE NO PC OU NAO
-  // VAI SER NECESSARIO CRIAR UM NOVO SINAL RESULTANTE DOS SINAIS DE CONTROLE
-  // PASSANDO PELAS PORTAS AND E OR
-  // FAZER ISSO APOS IMPLEMENTAR A ULA, POIS O SINAL ZERO EH NECESSARIO
-  pc = mux_PCSource_Buffer; 
-}
-
-void escreve_MDR (){
-  //mutex lock de PC e PCSource_buffer
-  mdr = memory_content_read;  
-}
-
-void escreve_IR (){
-  if ((sc & separa_IRWrite) == ativa_IRWrite)
-    IR = memory_content_read; 
-}
-
-void escreve_A (){
-  //mutex lock
-  A = read_data_1;  
-}
-
-void escreve_B (){
-  //mutex lock
-  B = read_data_2;  
-}
-
-void memory_access ()
-{
-    if ((separa_MemRead & sc) == ativa_MemRead)  
-    memory_content_read = memoria[mux_IorD_buffer/4];
-  
-    if ((sc & separa_MemWrite) == ativa_MemWrite)
-      memoria[mux_IorD_buffer/4] = B;
-}
-
 void banco_registradores ()
 {
   int read_register_1, read_register_2, write_register, write_data;
@@ -205,7 +113,6 @@ void banco_registradores ()
   
     if ((sc & separa_RegWrite) == ativa_RegWrite)
       reg[write_register] = write_data;
-  
 }
 
 

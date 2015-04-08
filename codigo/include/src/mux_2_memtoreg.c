@@ -10,54 +10,46 @@
 #include "mascara.h"
 
 #define ALUOut 0
-extern int aluout;
 extern int cpu_clock;
+extern int aluout;
 extern int mdr;
 extern c_sign cs;
-int mux_MemtoReg_buffer;
+
+link mux_memtoreg_buffer;
 
 extern pthread_mutex_t control_sign;
 extern pthread_cond_t control_sign_wait;
 
-/*
-	>> Não haverá problema de dependências caso o dado usado seja de algum registrador, pois o dado usado já foi computado no ciclo anterior
+extern pthread_mutex_t mux_memtoreg_result;
+extern pthread_cond_t mux_memtoreg_execution_wait;
 
-	>> Agora é necessário garantir que qualquer computação no ciclo atual seja efetivada somente ao final do cilo, ou seja, depois que as
-outras unidades funcionais já usaram o dado do clico anterior
+extern pthread_barrier_t current_cycle;
+extern pthread_barrier_t update_registers;
 
-	>> Entendo que o sinal de controle necessita ter uma flag com a informação de que o este sinal já foi atualizado no ciclo atual.
-Isso serve para tratar deadlocks.
-
-	>> Estou imaginando o seguinte:
-
-	typedef struct c_sign{
-		int short value;		// Inteiro que representa o sinal de controle
-		int isUpdated;			// 1 para atualizado e 0 caso contrário
-	}c_sign;
-
-*/
-
-
-/*   */
 void mux_2_MemtoReg(void *not_used){
 	int last_clock = 10;
+	mux_memtoreg_buffer.isUpdated = 0;
 
 	while(ir){
 		if (last_clock != cpu_clock){
 			pthread_mutex_lock(&control_sign);
-
 			if (!cs.isUpdated)
 				while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
-
 			pthread_mutex_unlock(&control_sign);
 
 			if(( (separa_MemtoReg & cs.value) >> MemtoReg_POS) & 0x01 == ALUOut)
-      				mux_MemtoReg_buffer = aluout;
-			else mux_MemtoReg_buffer = mdr;
-
+      				mux_memtoreg_buffer.value = aluout;
+			else mux_memtoreg_buffer.value = mdr;
 			last_clock = cpu_clock;
 
+			pthread_mutex_lock(&mux_memtoreg_result);
+			mux_memtoreg_buffer.isUpdated = 1;
+			pthread_cond_signal(&mux_memtoreg_execution_wait);
+			pthread_mutex_unlock(&mux_memtoreg_result);
+
 			pthread_barrier_wait(&current_cycle);
+			mux_memtoreg_buffer.isUpdate = 0;
+			pthread_barrier_wait(&update_registers);
 		}
 		else pthread_yield();
 	}

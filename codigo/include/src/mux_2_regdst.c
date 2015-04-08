@@ -1,15 +1,10 @@
-/*
-	File with implementation of Mux_2_IorD routine.
-	It receives a control parameter from control unit to choose
-	between PC's or ALUOut's adresses content to send to the main memory.
-*/
 #ifndef _MUX_2_IORD_
 #define _MUX_2_IORD_
 
 #include <pthread.h>
 #include "mascara.h"
 
-#define PC 0
+#define RT 0
 
 /* Extern global variables  */
 extern int cpu_clock;
@@ -20,13 +15,13 @@ extern c_sign cs;
 extern pthread_mutex_t control_sign;
 extern pthread_cond_t control_sign_wait;
 
-extern pthread_mutex_t mux_iord_result;
-extern pthread_cond_t mux_iord_execution_wait;
+extern pthread_mutex_t mux_regdst_result;
+extern pthread_cond_t mux_regdst_execution_wait;
 
 extern pthread_barrier_t current_cycle;
 extern pthread_barrier_t update_registers;
 
-link mux_iord_buffer;
+link mux_regdst_buffer;
 
 void mux_2_iord(void *not_used){
 	int last_clock = 10;
@@ -38,19 +33,19 @@ void mux_2_iord(void *not_used){
 				while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
                         pthread_mutex_unlock(&control_sign);
 
-			if(( (separa_IorD & cs.value) >> IorD_POS) & 0x01 == PC){
-      				mux_iord_buffer.value = pc;
+			if(( (separa_RegDst & cs.value) >> RegDst_POS) & 0x01 == RT){
+      				mux_iord_buffer.value = ((IR & separa_rt) >> 16) & 0x0000001f;
 			}
-			else mux_iord_buffer.value = aluout;
+			else mux_regdst_buffer.value = ((IR & separa_rd) >> 11) & 0x0000001f;
 			last_clock = cpu_clock;
 
-			pthread_mutex_lock(&mux_iord_result);
-			mux_iord_buffer.isUpdated = 1;
-			pthread_cond_broadcast(&mux_iord_execution_wait);
-			pthread_mutex_unlock(&mux_iord_result);
+			pthread_mutex_lock(&mux_regdst_result);
+			mux_regdst_buffer.isUpdated = 1;
+			pthread_cond_broadcast(&mux_regdst_execution_wait);
+			pthread_mutex_unlock(&mux_regdst_result);
 
 			pthread_barrier_wait(&current_cycle);
-			mux_iord_buffer.isUpdated = 0;
+			mux_regdst_buffer.isUpdated = 0;
 			pthread_barrier_wait(&update_registers);
 		}
 		else pthread_yield();
