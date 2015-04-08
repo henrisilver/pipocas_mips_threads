@@ -23,7 +23,7 @@ extern pthread_mutex_t shift_left_mutex;
 extern pthread_cond_t shift_left_cond;
 extern pthread_barrier_t current_cycle;
 
-int mux_MemtoReg_buffer;
+link mux_alusrcb_buffer;
 
 void mux_4_ALUSrcB(void *not_used){
 	int last_clock = 10;
@@ -38,27 +38,35 @@ void mux_4_ALUSrcB(void *not_used){
 			pthread_mutex_unlock(&control_sign);
 
 			if((((separa_ALUSrcB0 | separa_ALUSrcB1) & cs.value) >> ALUSrcB0_POS) & 0x03 == 0)
-				mux_ALUSrcB_buffer = b_value;		// B register value
+				mux_ALUSrcB_buffer.value = b_value;		// B register value
 			else if((((separa_ALUSrcB0 | separa_ALUSrcB1) & cs.value) >> ALUSrcB0_POS) & 0x03 == 1)
-				mux_ALUSrcB_buffer = 4;			// PC's increment
+				mux_ALUSrcB_buffer.value = 4;			// PC's increment
 			else if((((separa_ALUSrcB0 | separa_ALUSrcB1) & cs.value) >> ALUSrcB0_POS) & 0x03 == 2)
 			{
 				pthread_mutex_lock(&sign_extend_mutex);
 				if (!se.isUpdated)
 					while(pthread_cond_wait(&sign_extend_cond,&sign_extend_mutex) != 0);
 				pthread_mutex_unlock(&sign_extend_mutex);
-				mux_ALUSrcB_buffer = se.value;	// Imediato
+				mux_ALUSrcB_buffer.value = se.value;	// Imediato
 			}
 			else {
 				pthread_mutex_lock(&shift_left_mutex);
 				if (!shift_left.isUpdated)
 					while(pthread_cond_wait(&shift_left_cond, &shift_left_mutex) != 0);
 				pthread_mutex_unlock(&shift_left_mutex);
-				 mux_ALUSrcB_buffer = shift_left.value;	// Branch Address
+				 mux_ALUSrcB_buffer.value = shift_left.value;	// Branch Address
 			}
 
 			last_clock = cpu_clock;
-			pthread_barrier_wait(&current_cycle);
+
+			pthread_mutex_lock(&mux_alusrcb_result);
+			mux_alusrcb_buffer.isUpdated = 1;
+			pthread_cond_signal(&mux_alusrcb_execution_wait);
+			pthread_mutex_unlock(&mux_alusrcb_result);
+
+            pthread_barrier_wait(&current_cycle);
+			mux_alusrcb_buffer.isUpdated = 0;
+			pthread_barrier_wait(&update_registers);
 		}
 		else pthread_yield();
 	}

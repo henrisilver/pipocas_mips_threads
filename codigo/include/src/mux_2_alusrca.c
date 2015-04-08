@@ -17,7 +17,7 @@ extern pthread_mutex_t control_sign;
 void mux_2_alusrca(void *not_used)
 {
     	int last_clock = 10;
-	mux_alusrca_buffer.isUpdated = 0;
+		mux_alusrca_buffer.isUpdated = 0;
 
     	while(ir)
     	{
@@ -36,9 +36,9 @@ void mux_2_alusrca(void *not_used)
 			pthread_mutex_lock(&mux_alusrca_result);
 			mux_alusrca_buffer.isUpdated = 1;
 			pthread_cond_signal(&mux_alusrca_execution_wait);
-			pthread_mutex_unlock(&mux_arca_result);
+			pthread_mutex_unlock(&mux_alusrca_result);
 
-            		pthread_barrier_wait(&current_cycle);
+            pthread_barrier_wait(&current_cycle);
 			mux_alusrca_buffer.isUpdated = 0;
 			pthread_barrier_wait(&update_registers);
 		}

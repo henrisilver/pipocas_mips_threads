@@ -11,6 +11,7 @@
 
 extern int *memoria;
 extern int cpu_clock;
+extern int mem_data;
 extern int mdr;
 extern c_sign cs;
 extern link mux_iord_buffer

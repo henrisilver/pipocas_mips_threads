@@ -4,7 +4,7 @@
 extern int and_result;
 extern int cpu_clock;
 extern int pc;
-extern and_or_sign or_result;
+extern link or_result;
 extern link mux_pcsource_buffer;
 extern c_sign cs;
 

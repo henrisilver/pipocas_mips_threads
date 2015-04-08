@@ -4,26 +4,19 @@
 #include <pthread.h>
 #include "mascara.h"
 
-typedef struct and_or_sign {//variavel que sera mandada para pc
-
-    int isUpdated;
-    int value;
-
-}and_or_sign;
-
-and_or_sign or_result;
+link or_result;
 
 extern int cpu_clock;
 extern int pc;
 extern c_sign cs;
 
-extern char zero;
+extern link alu_zero;
 
 extern pthread_barrier_t current_cycle;
 extern pthread_barrier_t update_registers;
 
-extern pthread_mutex_t control_sign;
-extern pthread_mutex_t alu_value_zero;
+extern pthread_mutex_t alu_zero_wait;
+extern pthread_mutex_t alu_zero_mutex;
 
 extern pthread_cond_t control_sign_wait;
 extern pthread_cond_t alu_execution_wait;
@@ -49,13 +42,13 @@ void and_or(void *not_used){
                 while(pthread_cond_wait(&control_sign_wait, &control_sign) != 0);//idle loop. espera o cs atualizar
             pthread_mutex_unlock(&control_sign);//libera o mutex pois cond wait disputa por ele na volta
 
-            pthread_mutex_lock(&alu_value_zero);
-            if(!alu_result.isUpdated)
-                while(pthread_cond_wait(&alu_execution_wait, &alu_value_zero) != 0);//idle loop. espera a alu realizar a operacao
-            pthread_mutex_unlock(&alu_value_zero);
+            pthread_mutex_lock(&alu_zero_mutex;
+            if(!alu_zero.isUpdated)
+                while(pthread_cond_wait(&alu_zero_wait, &alu_zero_mutex) != 0);//idle loop. espera a alu realizar a operacao
+            pthread_mutex_unlock(&alu_zero_mutex);
 
             //inicio operacao para a porta and
-            if(( (separa_PCWriteCond & cs.value) >> 9) & zero)//separa o bit importante e faz a operacao
+            if(( (separa_PCWriteCond & cs.value) >> 9) & alu_result.zero)//separa o bit importante e faz a operacao
                 and_result = 1;
 
             else

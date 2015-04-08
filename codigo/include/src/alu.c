@@ -18,14 +18,24 @@
 #include <pthread.h>
 #include "mascara.h"
 
-extern int alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, ir, cpu_clock;
-extern char zero, alu_control;
+link alu_zero, alu_result;
+
+extern int ir, cpu_clock;
+link mux_alusrca_buffer, mux_alusrcb_buffer;
 extern char alu_overflow;
 
-extern pthread_cond_t alu_sign_wait;
-extern pthread_mutex_t alu_sign;
+extern pthread_cond_t alu_sign_wait, control_sign_wait;
+extern pthread_mutex_t alu_sign, control_sign;
 
-extern galu_sign alu_s;
+pthread_cond_t mux_alusrca_execution_wait, mux_alusrcb_execution_wait;
+pthread_mutex_t mux_alusrca_result, mux_alusrcb_result;
+
+extern alu_sign alu_s;
+
+extern pthread_mutex_t alu_zero_mutex;
+extern pthread_mutex_t alu_result_mutex;
+extern pthread_cond_t alu_zero_wait;
+extern pthread_cond_t alu_result_wait;
 
 void add(int *alu_result, int a, int b, char *overflow);
 void sub(int *alu_result, int a, int b, char *overflow);
@@ -45,58 +55,97 @@ void somador_completo (char *result_op, char a, char b, char * c_out, char c_in)
 // Argumentos da alu no trabalho de org: int a, int b, char alu_op, int *result_ula, char *zero, char *overflow
 void alu (void * not_used) {
     int last_clock = 10;
-
+    alu_zero.isUpdated = 0;
+    alu_result.isUpdated = 0;
+    pthread_mutex_init(&mux_alusrca_result, NULL);
+    pthread_mutex_init(&mux_alusrcb_result, NULL);  
+    pthread_cond_init(&mux_alusrca_execution_wait, NULL);
+    pthread_cond_init(&mux_alusrcb_execution_wait, NULL);
     while(ir){
         if (last_clock != cpu_clock){
+
+            pthread_mutex_lock(&control_sign);
+            if(!cs.isUpdated)
+                while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
+            pthread_mutex_unlock(&control_sign);
 
             pthread_mutex_lock(&alu_sign);
             if(!alu_s.isUpdated)
                 while(pthread_cond_wait(&alu_sign_wait,&alu_sign) != 0);
                     pthread_mutex_unlock(&alu_sign);
 
+            pthread_mutex_lock(&mux_alusrca_result);
+            if(!mux_alusrca_buffer.isUpdated)
+                while(pthread_cond_wait(&mux_alusrca_execution_wait ,&mux_alusrca_result) != 0);
+            pthread_mutex_unlock(&mux_alusrca_result);
+
+            pthread_mutex_lock(&mux_alusrcb_result);
+            if(!mux_alusrcb_buffer.isUpdated)
+                while(pthread_cond_wait(&mux_alusrcb_execution_wait ,&mux_alusrcb_result) != 0);
+            pthread_mutex_unlock(&mux_alusrcb_result);
+
             // Caso que o codigo de operacao indica uma soma
             if (alu_s.value == ativa_soma)
             {
-                add(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
+                add(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value, &alu_overflow);
             }
             
             // Caso que o codigo de operacao indica uma subtracao
             else if (alu_s.value == ativa_subtracao)
             {
-                sub(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
+                sub(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value, &alu_overflow);
             }
             
             // Caso que o codigo de operacao indica uma operacao and
             else if (alu_s.value == ativa_and)
             {
-                and(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
+                and(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value);
             }
             
             // Caso que o codigo de operacao indica uma operacao or
             else if (alu_s.value == ativa_or)
             {
-                or(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
+                or(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value);
             }
             
             // Caso que o codigo de operacao indica uma operacao slt
             else if (alu_s.value == ativa_slt)
             {
-                slt(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
+                slt(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value);
             }
             
             // Se o resultado da ula for zero, o retorno *zero eh setado.
-            if (alu_s.value == 0x00) zero = 0x01;
-            else zero = 0x00;
+            if (alu_s.value == 0x00) alu_zero.value = 0x01;
+            else alu_zero.value = 0x00;
             
             // O resultado da operacao da ula tambem eh retornado pela funcao so que nao
             // kkk zoeira mano essa funcao é void!!!1 lol
             //return *alu_result;
+
             last_clock = cpu_clock;
+          
+            pthread_mutex_lock(&alu_result_mutex);
+            alu_result.isUpdated = 1;
+            pthread_cond_signal(&alu_result_wait);
+            pthread_mutex_unlock(&alu_result_mutex);
+          
+            pthread_mutex_lock(&alu_zero_mutex);
+            alu_zero.isUpdated = 1;
+            pthread_cond_signal(&alu_zero_wait);
+            pthread_mutex_unlock(&alu_zero_mutex);
 
             pthread_barrier_wait(&current_cycle);
+            alu_result.isUpdated = 0;
+            alu_zero.isUpdated = 0;
+            pthread_barrier_wait(&update_registers);
+
         }
         else pthread_yield();
     }
+    pthread_mutex_destroy(&mux_alusrca_result);
+    pthread_mutex_destroy(&mux_alusrca_result);  
+    pthread_cond_destroy(&mux_alusrca_execution_wait);
+    pthread_cond_destroy(&mux_alusrcb_execution_wait);
     pthread_exit(0);
 }
 

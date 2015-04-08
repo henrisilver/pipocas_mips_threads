@@ -11,7 +11,7 @@
 
 #define IRWrite 1
 extern int cpu_clock;
-extern int memory_content_read;
+extern int mem_data;
 extern c_sign cs;
 int ir;
 
@@ -35,7 +35,7 @@ void Instruction_Register(){
 
                         pthread_barrier_wait(&current_cycle);
 			if(( (separa_IRWrite & cs.value) >> IRWrite_POS) & 0x01 == IRWrite){
-                                ir = memory_content_read;
+                                ir = mem_data;
                         }
 			pthread_barrier_wait(&update_registers);
                 }
