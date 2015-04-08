@@ -14,18 +14,17 @@
 
 /* Extern global variables  */
 extern int cpu_clock;
-extern int pc;
 extern int aluout;
-extern int pc_shift_left_buffer;
-extern link alu_result;
-extern c_sign cs;
-int mux_pcsource_buffer;
+extern int pc;
 
-extern pthread_barrier_t current_cycle;
-extern pthread_barrier_t update_registers;
+extern link alu_result;
+extern link pc_shift_left_buffer;
 
 extern pthread_mutex_t control_sign;
 extern pthread_cond_t control_sign_wait;
+
+pthread_mutex_t pc_shift_left_result;
+pthread_cond_t pc_shift_left_execution_wait
 
 pthread_cond_t alu_execution_wait;
 pthread_mutex_t alu_value_zero;
@@ -33,11 +32,13 @@ pthread_mutex_t alu_value_zero;
 extern pthread_cond_t mux_pcsource_execution_wait;
 extern pthread_mutex_t mux_pcsource;
 
-/* This file's global variable  */
+extern pthread_barrier_t current_cycle;
+extern pthread_barrier_t update_registers;
+
+link mux_pcsource_buffer;
 
 void mux_2_pcsource(void *not_used){
 	int last_clock = 10;
-	int temp;
 
 	while(ir){
 		if (last_clock != cpu_clock){
@@ -52,17 +53,20 @@ void mux_2_pcsource(void *not_used){
 				if(!alu_result.isUpdated)
 					while(pthread_cond_wait(&alu_execution_wait,&alu_value) != 0);
 				pthread_mutex_unlock(&alu_value_zero);
-      				temp = alu_result.value;
+      				mux_pcsource_buffer.value = alu_result.value;
 			}
 			else if (( (separa_PCSource & cs.value) >> PCSource_POS ) & 0x01 == ALUOUT){
-				temp = aluout;
+				mux_pcsource_buffer.value = aluout;
 			}
-			else temp = pc_shift_left_buffer;
-
+			else {
+				pthread_mutex_lock(&pc_shift_left_result);
+				if(!pc_shit_left_result.isUpdated)
+					while(pthread_cond_wait(&pc_shift_left_execution,&pc_shift_left_result) != 0);
+				pthread_mutex_unlock(&pc_shift_left_result.value);
+			}
 			last_clock = cpu_clock;
 
 			pthread_mutex_lock(&mux_pcsource);
-			mux_pcsource_buffer.value = temp;
 			mux_pcsource_buffer.isUpdated = 1;
 			pthread_cond_signal(&mux_pcsource_execution_wait);
 			pthread_mutex_unlock(&mux_pcsource);

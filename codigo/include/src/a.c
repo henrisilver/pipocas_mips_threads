@@ -13,6 +13,9 @@ extern int cpu_clock;
 extern int read_data_1;
 int a_value;
 
+extern pthread_mutex_t control_sign;
+extern pthread_cond_t control_sign_wait;
+
 extern pthread_barrier_t current_cycle;
 extern pthread_barrier_t update_registers;
 
@@ -22,10 +25,14 @@ void a(){
 
         while(ir){
                 if (last_clock != cpu_clock){
+			pthread_mutex_lock(&control_sign);
+                        if(!cs.isUpdated)
+                                while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
+                        pthread_mutex_unlock(&control_sign);
                         last_clock = cpu_clock;
 
                         pthread_barrier_wait(&current_cycle);
-                        a = read_data_1;
+                        a_value = read_data_1;
 			pthread_barrier_wait(&update_registers);
                 }
                 else pthread_yield();
