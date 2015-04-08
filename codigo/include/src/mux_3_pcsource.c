@@ -39,6 +39,10 @@ link mux_pcsource_buffer;
 
 void mux_2_pcsource(void *not_used){
 	int last_clock = 10;
+	pthread_mutex_init(&pc_shift_left_result, NULL);
+	pthread_mutex_init(&alu_value_zero, NULL);
+	pthread_cond_init(&pc_shift_left_execution_wait, NULL);
+	pthread_cond_init(&alu_execution_wait, NULL);
 
 	while(ir){
 		if (last_clock != cpu_clock){
