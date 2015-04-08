@@ -21,7 +21,11 @@
 extern int alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, ir, cpu_clock;
 extern char zero, alu_control;
 extern char alu_overflow;
-extern pthread_mutex_t alu_control_sign;
+
+extern pthread_cond_t alu_sign_wait;
+extern pthread_mutex_t alu_sign;
+
+extern galu_sign alu_s;
 
 void add(int *alu_result, int a, int b, char *overflow);
 void sub(int *alu_result, int a, int b, char *overflow);
@@ -45,47 +49,55 @@ void alu (void * not_used) {
     while(ir){
         if (last_clock != cpu_clock){
 
-            pthread_mutex_lock(&control_sign);
-            if(!cs.isUpdated)
-                while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
-                        pthread_mutex_unlock(&control_sign);
-    // Caso que o codigo de operacao indica uma soma
-    if (alu_control == ativa_soma)
-    {
-        add(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
+            pthread_mutex_lock(&alu_sign);
+            if(!alu_s.isUpdated)
+                while(pthread_cond_wait(&alu_sign_wait,&alu_sign) != 0);
+                    pthread_mutex_unlock(&alu_sign);
+
+            // Caso que o codigo de operacao indica uma soma
+            if (alu_s.value == ativa_soma)
+            {
+                add(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
+            }
+            
+            // Caso que o codigo de operacao indica uma subtracao
+            else if (alu_s.value == ativa_subtracao)
+            {
+                sub(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
+            }
+            
+            // Caso que o codigo de operacao indica uma operacao and
+            else if (alu_s.value == ativa_and)
+            {
+                and(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
+            }
+            
+            // Caso que o codigo de operacao indica uma operacao or
+            else if (alu_s.value == ativa_or)
+            {
+                or(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
+            }
+            
+            // Caso que o codigo de operacao indica uma operacao slt
+            else if (alu_s.value == ativa_slt)
+            {
+                slt(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
+            }
+            
+            // Se o resultado da ula for zero, o retorno *zero eh setado.
+            if (alu_s.value == 0x00) zero = 0x01;
+            else zero = 0x00;
+            
+            // O resultado da operacao da ula tambem eh retornado pela funcao so que nao
+            // kkk zoeira mano essa funcao é void!!!1 lol
+            //return *alu_result;
+            last_clock = cpu_clock;
+
+            pthread_barrier_wait(&current_cycle);
+        }
+        else pthread_yield();
     }
-    
-    // Caso que o codigo de operacao indica uma subtracao
-    else if (alu_control == ativa_subtracao)
-    {
-        sub(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer, &alu_overflow);
-    }
-    
-    // Caso que o codigo de operacao indica uma operacao and
-    else if (alu_control == ativa_and)
-    {
-        and(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
-    }
-    
-    // Caso que o codigo de operacao indica uma operacao or
-    else if (alu_control == ativa_or)
-    {
-        or(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
-    }
-    
-    // Caso que o codigo de operacao indica uma operacao slt
-    else if (alu_control == ativa_slt)
-    {
-        slt(&alu_result, mux_ALUSrcA_buffer, mux_ALUSrcB_buffer);
-    }
-    
-    // Se o resultado da ula for zero, o retorno *zero eh setado.
-    if (alu_result == 0x00) zero = 0x01;
-    else zero = 0x00;
-    
-    // O resultado da operacao da ula tambem eh retornado pela funcao so que nao
-    // kkk zoeira mano essa funcao é void!!!1 lol
-    //return *alu_result;
+    pthread_exit(0);
 }
 
 void somador_completo (char *result_op, char a, char b, char * c_out, char c_in)

@@ -208,12 +208,12 @@ void control_unit(void *not_used)
             pthread_barrier_init(&current_cycle,NULL, (unsigned int)NUM_OF_THREADS_WHICH_USE_CSVALUE);
             pthread_mutex_lock(&control_sign);
             cs.value = (short int)(sinal & 0x0000ffff);
-            cs.updated = 1;
+            cs.isUpdated = 1;
             pthread_cond_broadcast(&control_sign_wait);
             pthread_mutex_unlock(&control_sign);
             pthread_barrier_wait(&current_cycle);
             pthread_barrier_destroy(&current_cycle);
-            cs.updated = 0;
+            cs.isUpdated = 0;
             
             pthread_barrier_wait(&update_registers);
         }

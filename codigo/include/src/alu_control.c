@@ -76,14 +76,15 @@ void alu_control(void *not_used)
                     alu_control_sign = ativa_slt;
             }
 
+            last_clock = cpu_clock;
             pthread_mutex_lock(&alu_sign);          //trava a variavel de alucontrol para passar para alu
             alu_s.value = alu_control_sign;         //atualiza o valor na alucontrol depois da verificacao de qual comando estaria sendo enviado
-            alu_s.updated = 1;                      //sinaliza que pode ser lido, a variavel esta atualizada para este ciclo
+            alu_s.isUpdated = 1;                      //sinaliza que pode ser lido, a variavel esta atualizada para este ciclo
             pthread_cond_signal(&alu_sign_wait);    //sinaliza para a alu que o dado esta pronto para consumo
             pthread_mutex_unlock(&alu_sign);        //abdica do mutex para a variavel da alucontrol
             pthread_barrier_wait(&current_cycle);   //sinaliza que os deveres desta thread foram concluidos
             
-            alu_s.updated = 0;
+            alu_s.isUpdated = 0;
             
             pthread_barrier_wait(&update_registers);//espera as threads completarem para retornar ao estado 0 da maq. de estados
         }
