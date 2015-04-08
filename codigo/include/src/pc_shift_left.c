@@ -34,8 +34,8 @@ void pc_shift_left(void *not_used)
 			pthread_mutex_unlock(&control_sign);
 
 			pc_shift_left_buffer.value = (ir_value & 0x03ffffff) << 2;      //0000...00
-            		pc_temp = (0xf0000000 & pc_value);                        //pego somente os 4 bits mais significativos
-	            	pc_shift_left_buffer.value = (pc_temp | pc_shift_left_buffer);
+            pc_temp = (0xf0000000 & pc_value);                        //pego somente os 4 bits mais significativos
+	        pc_shift_left_buffer.value = (pc_temp | pc_shift_left_buffer);
 
 			last_clock = cpu_clock;
 
@@ -48,7 +48,7 @@ void pc_shift_left(void *not_used)
 			pc_shift_left_buffer.isUpdated = 0;
 			pthread_barrier_wait(&update_registers);
 		}
-        	else pthread_yield();
+        else pthread_yield();
     }
     pthread_exit(0);
 }
