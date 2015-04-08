@@ -5,7 +5,8 @@
 #include "mascara.h"
 
 extern int cpu_clock;
-extern int sign_extend_value;
+
+link se;
 
 // extern pthread_cond_t control_sign_wait;
 // extern pthread_mutex_t control_sign;
@@ -15,6 +16,7 @@ pthread_cond_t sign_extend_cond;
 
 void sign_extend(void *not_used)
 {
+	se.isUpdated = 0;
     int last_clock = 10;
     short int imediato;
     int sign_extend_temp
@@ -43,10 +45,12 @@ void sign_extend(void *not_used)
 	
 	    	last_clock = cpu_clock;
 	    	pthread_mutex_lock(&sign_extend_mutex);
-	    	sign_extend_value = sign_extend_temp;
-	    	pthread_cond_signal(&sign_extend_cond);
+	    	se.value = sign_extend_temp;
+	    	se.isUpdated = 1;
+	    	pthread_cond_broadcast(&sign_extend_cond);
 	    	pthread_mutex_unlock(&sign_extend_mutex);
 
+	    	se.isUpdated = 0;
             pthread_barrier_wait(&current_cycle);
 		}
 
