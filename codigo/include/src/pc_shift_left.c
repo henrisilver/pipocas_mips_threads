@@ -10,7 +10,7 @@ extern int ir_value;
 
 int pc_shift_left_buffer;
 
-void PC_shift_left(void *not_used)
+void pc_shift_left(void *not_used)
 {
     
     int last_clock = 10;

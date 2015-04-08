@@ -28,9 +28,9 @@ extern pthread_mutex_t control_sign;
 extern pthread_cond_t control_sign_wait;
 
 pthread_cond_t alu_execution_wait;
-pthread_mutex_t alu_value;
+pthread_mutex_t alu_value_zero;
 
-extern pthread_cond_t mux_execution_wait;
+extern pthread_cond_t mux_pcsource_execution_wait;
 extern pthread_mutex_t mux_pcsource;
 
 /* This file's global variable  */
@@ -48,10 +48,10 @@ void mux_2_pcsource(void *not_used){
                         pthread_mutex_unlock(&control_sign);
 
 			if(( (separa_PCSource & cs.value) >> PCSource_POS) & 0x01 == ALU_RESULT){
-				pthread_mutex_lock(&alu_value);
+				pthread_mutex_lock(&alu_value_zero);
 				if(!alu_result.isUpdated)
 					while(pthread_cond_wait(&alu_execution_wait,&alu_value) != 0);
-				pthread_mutex_unlock(&alu_value);
+				pthread_mutex_unlock(&alu_value_zero);
       				temp = alu_result.value;
 			}
 			else if (( (separa_PCSource & cs.value) >> PCSource_POS ) & 0x01 == ALUOUT){
@@ -64,7 +64,7 @@ void mux_2_pcsource(void *not_used){
 			pthread_mutex_lock(&mux_pcsource);
 			mux_pcsource_buffer.value = temp;
 			mux_pcsource_buffer.isUpdated = 1;
-			pthread_cond_signal(&mux_execution_wait);
+			pthread_cond_signal(&mux_pcsource_execution_wait);
 			pthread_mutex_unlock(&mux_pcsource);
 
 			pthread_barrier_wait(&current_cycle);

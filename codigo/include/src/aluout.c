@@ -10,7 +10,7 @@
 #include "mascara.h"
 
 extern int cpu_clock;
-extern int alu_result;
+extern link alu_result;
 extern c_sign cs;
 int aluout;
 
@@ -34,7 +34,7 @@ void ALUOut(){
                         last_clock = cpu_clock;
                         pthread_barrier_wait(&current_cycle);
 
-                        aluout = alu_result;
+                        aluout = alu_result.value;
 
 			pthread_barrier_wait(&update_registers);
                 }

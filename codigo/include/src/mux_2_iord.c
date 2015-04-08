@@ -20,11 +20,18 @@ extern c_sign cs;
 extern pthread_mutex_t control_sign;
 extern pthread_cond_t control_sign_wait;
 
-/* This file's global variable  */
-int mux_IorD_buffer;
+extern pthread_mutex_t mdr_ir;
+extern pthread_cond_t mux_iord_execution_wait;
 
-void mux_2_IorD(void *not_used){
+extern pthread_barrier_t current_cycle;
+extern pthread_barrier_t update_registers;
+
+/* This file's global variable  */
+link mux_iord_buffer;
+
+void mux_2_iord(void *not_used){
 	int last_clock = 10;
+	int temp;
 
 	while(ir){
 		if (last_clock != cpu_clock){
@@ -35,12 +42,21 @@ void mux_2_IorD(void *not_used){
                         pthread_mutex_unlock(&control_sign);
 
 			if(( (separa_IorD & cs.value) >> IorD_POS) & 0x01 == PC){
-      				mux_IorD_buffer = pc_value;
+      				temp = pc_value;
 			}
-			else mux_IorD_buffer = aluout_value;
+			else temp = aluout_value;
 
 			last_clock = cpu_clock;
+
+			pthread_mutex_lock(&mdr_ir);
+			mux_iord_buffer.value = temp;
+			mux_iord_buffer.isIpdated = 1;
+			pthread_cond_broadcast(&mux_iord_execution_wait);
+			pthread_mutex_unlock(&mdr_ir);
+
 			pthread_barrier_wait(&current_cycle);
+			mux_iord_buffer.isUpdated = 0;
+			pthread_barrier_wait(&update_registers);
 		}
 		else pthread_yield();
 	}

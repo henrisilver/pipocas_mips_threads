@@ -16,6 +16,7 @@ int mdr;
 
 extern pthread_mutex_t control_sign;
 extern pthread_cond_t control_sign_wait;
+
 extern pthread_barrier_t current_cycle;
 extern pthread_barrier_t update_registers;
 
