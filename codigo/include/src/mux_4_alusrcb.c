@@ -38,7 +38,7 @@ void mux_4_ALUSrcB(void *not_used){
 			else if((((separa_ALUSrcB0 | separa_ALUSrcB1) & cs.value) >> ALUSrcB0_POS) & 0x03 == 1)
 				mux_ALUSrcB_buffer = 4;			// PC's increment
 			else if((((separa_ALUSrcB0 | separa_ALUSrcB1) & cs.value) >> ALUSrcB0_POS) & 0x03 == 2)
-				mux_ALUSrcB_buffer = ext_sign_value;	// Imediato
+				mux_ALUSrcB_buffer = sign_extend_value;	// Imediato
 			else mux_ALUSrcB_buffer = shift_left2_value;	// Branch Address
 
 			last_clock = cpu_clock;
