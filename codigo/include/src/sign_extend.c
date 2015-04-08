@@ -5,6 +5,7 @@
 #include "mascara.h"
 
 extern int cpu_clock;
+extern c_sign cs;
 
 link se;
 

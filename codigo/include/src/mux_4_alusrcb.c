@@ -13,8 +13,7 @@
 extern int cpu_clock;
 extern int b_value;
 extern link se, shift_left;
-extern int shift_left2_value;
-extern c_sign;
+extern c_sign cs;
 
 extern pthread_mutex_t control_sign;
 extern pthread_cond_t control_sign_wait;
@@ -22,6 +21,7 @@ extern pthread_mutex_t sign_extend_mutex;
 extern pthread_cond_t sign_extend_cond;
 extern pthread_mutex_t shift_left_mutex;
 extern pthread_cond_t shift_left_cond;
+extern pthread_barrier_t current_cycle;
 
 int mux_MemtoReg_buffer;
 
@@ -54,7 +54,7 @@ void mux_4_ALUSrcB(void *not_used){
 				if (!shift_left.isUpdated)
 					while(pthread_cond_wait(&shift_left_cond, &shift_left_mutex) != 0);
 				pthread_mutex_unlock(&shift_left_mutex);
-				 mux_ALUSrcB_buffer = shift_left2_value;	// Branch Address
+				 mux_ALUSrcB_buffer = shift_left.value;	// Branch Address
 			}
 
 			last_clock = cpu_clock;
