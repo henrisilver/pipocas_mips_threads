@@ -4,7 +4,14 @@
 #include <pthread.h>
 #include "mascara.h"
 
-int or_result;//variavel que sera mandada para pc
+typedef struct and_or_sign {//variavel que sera mandada para pc
+
+    int isUpdated;
+    int value;
+
+}and_or_sign;
+
+and_or_sign or_result;
 
 extern int cpu_clock;
 extern int pc;
@@ -66,10 +73,13 @@ void and_or(void *not_used){
             //fim operacao para porta ou
 
             pthread_mutex_lock(&or_result_mutex);
-            or_result = or_result_temp;
+            or_result.value = or_result_temp;
+            or_result.isUpdated = 1;
             pthread_cond_signal(&or_result_wait);//signaliza para pc que ja tem (ou nao)o resultado para escrita
             pthread_mutex_unlock(&or_result_mutex);
 
+            pthread_barrier_wait(&current_cycle);
+			or_result.isUpdated = 0;
             pthread_barrier_wait(&current_cycle);
 
         }
