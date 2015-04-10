@@ -6,17 +6,10 @@
 #ifndef _CONTROL_UNIT_
 #define _CONTROL_UNIT_
 
-#define NUM_OF_THREADS_WHICH_USE_CSVALUE 11
-
 #include <pthread.h>
 #include "mascara.h"
 
 #define PC 0
-extern int pc,aluout,cpu_clock;
-
-pthread_mutex_t control_sign;
-pthread_cond_t control_sign_wait;        // Should this condition be declared in control unit scope?
-
 
 /////////////////////////////////////////////////////////////////////
 //////////////// UNIDADE DE CONTROLE ////////////////////////////////
@@ -146,20 +139,13 @@ void gera_sinal_controle (int *output, char S)
     }
 }//fecha void gera_sinal_controle (int *output, char S)
 
-typedef struct c_sign{
-    short int value;        // Inteiro que representa o sinal de controle
-    int isUpdated;          // 1 para atualizado e 0 caso contrário
-}c_sign;
-
-c_sign cs;
-
 void control_unit(void *not_used)
 {
-    int sinal;
-    char S;
-    pthread_mutex_init(&control_sign, NULL);
-    pthread_cond_init(&control_sign_wait, NULL);
+    int sinal, last_clock = 10;
+    char S = -1;
+    cs.isUpdated = 0;
     char op = ((ir & separa_cop) >> 26) & 0x3f;
+    
     while(ir)
     {
         if (last_clock != cpu_clock){
@@ -205,21 +191,18 @@ void control_unit(void *not_used)
             }
             gera_sinal_controle (&sinal, S);
             
-            pthread_barrier_init(&current_cycle,NULL, (unsigned int)NUM_OF_THREADS_WHICH_USE_CSVALUE);
             pthread_mutex_lock(&control_sign);
             cs.value = (short int)(sinal & 0x0000ffff);
             cs.isUpdated = 1;
             pthread_cond_broadcast(&control_sign_wait);
             pthread_mutex_unlock(&control_sign);
             pthread_barrier_wait(&current_cycle);
-            pthread_barrier_destroy(&current_cycle);
             cs.isUpdated = 0;
             
             pthread_barrier_wait(&update_registers);
         }
         else pthread_yield();
     }
-    pthread_cond_destroy(&control_sign_wait);
     pthread_exit(0);
 }
 #endif

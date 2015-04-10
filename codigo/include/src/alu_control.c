@@ -1,9 +1,9 @@
 /*
-    File with implementation of ALU CONTROL routine.
-    It receives a control parameter from the control unit and also analyzes
-    the current instruction to define what ALU control signal will be sent to
-    the ALU.
-*/
+ File with implementation of ALU CONTROL routine.
+ It receives a control parameter from the control unit and also analyzes
+ the current instruction to define what ALU control signal will be sent to
+ the ALU.
+ */
 /*********************************************************************/
 /*********************************************************************/
 /*********************************************************************/
@@ -19,34 +19,18 @@
 #include <pthread.h>
 #include "mascara.h"
 
-extern int ir;
-extern pthread_mutex_t control_sign;
-extern pthread_cond_t control_sign_wait;
-extern pthread_barrier_t current_cyle, update_registers;
-
-pthread_cond_t alu_sign_wait;
-pthread_mutex_t alu_sign;
-
-typedef struct alu_sign{
-    char value;        // Inteiro que representa o sinal de controle
-    int isUpdated;          // 1 para atualizado e 0 caso contrário
-}alu_sign;
-
-alu_sign alu_s;
-
 // Recebe o campo de funcao e o sinal de controle ALUOp, e determina qual sera o sinal enviado a ula
 void alu_control(void *not_used)
 {
     int last_clock = 10;
     char alu_op;
-    char alu_control_sign;
+    char alu_control_sign = 0;
     char cfuncao;
-    pthread_mutex_init(&alu_sign, NULL);
-    pthread_cond_init(&alu_sign_wait, NULL);
-
+    alu_s.isUpdated = 0;
+    
     while(ir){
         if (last_clock != cpu_clock){
-
+            
             pthread_mutex_lock(&control_sign);
             if(!cs.isUpdated)
                 while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
@@ -57,10 +41,10 @@ void alu_control(void *not_used)
             cfuncao = (ir & separa_cfuncao);
             if (alu_op == 0x00)       // UC forca uma soma
                 alu_control_sign = ativa_soma;
-    
+            
             if (alu_op == 0x01)       // UC forca uma subtracao
                 alu_control_sign = ativa_subtracao;
-    
+            
             if (alu_op == 0x02)       // UC nao sabe o que fazer
             {
                 cfuncao = cfuncao & zera_2bits_cfuncao;         // cfuncao       op. na ula
@@ -75,7 +59,7 @@ void alu_control(void *not_used)
                 if (cfuncao == 0x0a)
                     alu_control_sign = ativa_slt;
             }
-
+            
             last_clock = cpu_clock;
             pthread_mutex_lock(&alu_sign);          //trava a variavel de alucontrol para passar para alu
             alu_s.value = alu_control_sign;         //atualiza o valor na alucontrol depois da verificacao de qual comando estaria sendo enviado
@@ -90,8 +74,6 @@ void alu_control(void *not_used)
         }
         else pthread_yield();
     }
-    pthread_cond_destroy(&alu_sign_wait);
-    pthread_mutex_destroy(&alu_sign);
     pthread_exit(0);
 }
 

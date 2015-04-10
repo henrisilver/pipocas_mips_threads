@@ -1,8 +1,92 @@
 #ifndef _MASCARA_
 #define _MASCARA_
-#define MAX 512
+#define MEMORY_SIZE 512
 #define CACHE_SET 8
 #define NUMREG 32
+// Structs usadas
+typedef struct connection {
+    int value;
+    int isUpdated;
+} connection;
+
+typedef struct c_sign{
+    short int value;        // Inteiro que representa o sinal de controle
+    int isUpdated;          // 1 para atualizado e 0 caso contrário
+}c_sign;
+
+typedef struct alu_signal{
+    char value;        // Inteiro que representa o sinal de controle
+    int isUpdated;          // 1 para atualizado e 0 caso contrário
+}alu_signal;
+
+void control_unit(void *);
+void a(void *);
+void alu_control(void *);
+void alu(void *);
+void aluout_register(void *);
+void and_or(void *);
+void b(void *);
+void instruction_register(void *);
+void main_memory(void *);
+void memory_data_register(void *);
+void mux_2_alusrca(void *);
+void mux_2_iord(void *);
+void mux_2_memtoreg(void *);
+void mux_2_regdst(void *);
+void mux_3_pcsource(void *);
+void mux_4_alusrcb(void *);
+void pc_shift_left(void *);
+void program_counter(void *);
+void register_bank(void *);
+void shift_left_after_se(void *);
+void sign_extend(void *);
+
+// VARIAVEIS GLOBAIS
+extern int pc, aluout, mdr, ir, a_value, b_value, jump_address, BEQ_Address, mem_data, read_data_1, read_data_2, cpu_clock, aluout;
+extern int reg[NUMREG];
+
+extern char zero, alu_overflow;
+extern short int sc;
+
+extern c_sign cs;
+extern connection memoria[MEMORY_SIZE], alu_zero, alu_result, mux_alusrca_buffer, mux_iord_buffer, mux_alusrca_buffer, mux_alusrcb_buffer, mux_memtoreg_buffer, mux_regdst_buffer, mux_pcsource_buffer, or_result, pc_shift_left_buffer, shift_left, se;
+extern alu_signal alu_s;
+
+extern pthread_mutex_t control_sign;
+extern pthread_mutex_t alu_sign;
+extern pthread_mutex_t or_result_mutex;
+extern pthread_mutex_t mux_iord_result;
+extern pthread_mutex_t mux_alusrca_result;
+extern pthread_mutex_t mux_memtoreg_result;
+extern pthread_mutex_t mux_regdst_result;
+extern pthread_mutex_t mux_pcsource_result;
+extern pthread_mutex_t pc_shift_left_result;
+extern pthread_mutex_t alu_result_mutex;
+extern pthread_mutex_t alu_zero_mutex;
+extern pthread_mutex_t mux_alusrcb_result;
+extern pthread_mutex_t pc_buffer;
+extern pthread_mutex_t shift_left_mutex;
+extern pthread_mutex_t sign_extend_mutex;
+
+extern pthread_cond_t control_sign_wait;
+extern pthread_cond_t alu_sign_wait;
+extern pthread_cond_t or_result_wait;
+extern pthread_cond_t mux_iord_execution_wait;
+extern pthread_cond_t mux_alusrca_execution_wait;
+extern pthread_cond_t mux_memtoreg_execution_wait;
+extern pthread_cond_t mux_regdst_execution_wait;
+extern pthread_cond_t mux_pcsource_execution_wait;
+extern pthread_cond_t pc_shift_left_execution_wait;
+extern pthread_cond_t alu_result_wait;
+extern pthread_cond_t alu_zero_wait;
+extern pthread_cond_t mux_alusrcb_execution_wait;
+extern pthread_cond_t pc_wait;
+extern pthread_cond_t shift_left_cond;
+extern pthread_cond_t sign_extend_cond;
+
+extern pthread_barrier_t update_registers;
+extern pthread_barrier_t current_cycle;
+
 
 /*posicao dos bits nos sinais de controle da ULA
 char C_ULA
@@ -17,22 +101,22 @@ char C_ULA
 
 posicao dos bits nos 16 sinais de controle determinados pela UC 
 int S_C
-0- RegDst		(RegDst)
-1- EscReg		(RegWrite)
-2- UALFonteA	(ALUSrcA)
-3- UALFonteB0	(ALUSrcB0)
-4- UALFonteB1	(ALUSrcB1)
-5- UALOp0		(ALUOp0)
-6- UALOp1		(ALUOp1)
-7- FontePC0		(PCSource0)
-8- FontePC1		(PCSource1)
-9- PCEscCond	(PCWriteCond)
-10-PCEsc		(PCWrite)
-11-IouD			(IorD)
-12-LerMem		(MemRead)
-13-EscMem		(MemWrite)
-14-MemParaReg	(MemtoReg)
-15-IREsc		(IRWrite)
+0- RegDst       (RegDst)
+1- EscReg       (RegWrite)
+2- UALFonteA    (ALUSrcA)
+3- UALFonteB0   (ALUSrcB0)
+4- UALFonteB1   (ALUSrcB1)
+5- UALOp0       (ALUOp0)
+6- UALOp1       (ALUOp1)
+7- FontePC0     (PCSource0)
+8- FontePC1     (PCSource1)
+9- PCEscCond    (PCWriteCond)
+10-PCEsc        (PCWrite)
+11-IouD         (IorD)
+12-LerMem       (MemRead)
+13-EscMem       (MemWrite)
+14-MemParaReg   (MemtoReg)
+15-IREsc        (IRWrite)
 */
 
 #define op_r_type 0
@@ -41,83 +125,85 @@ int S_C
 #define op_lw 35
 #define op_sw 43
 
+#define BITS_PER_BYTE 8
+
 // mascaras
 // usadas para ativar e desativar o bit zero. Atuam na variavel global zero (um char - 8bits)
-#define ativa_bit_zero        0x01	// 00000001		usada com |
-#define desativa_bit_zero     0xfe  // 1111 1110		usada com &
+#define ativa_bit_zero        0x01  // 00000001     usada com |
+#define desativa_bit_zero     0xfe  // 1111 1110        usada com &
 
 // usada para separar o bit zero da variavel global zero (um char - 8bits) (posicao 0)
-#define separa_bit_zero			0x01  // 0000 0001		usada com &
+#define separa_bit_zero         0x01  // 0000 0001      usada com &
 
 // usada para separar a operacao da ULA. Atua em SC_ULA 3-0
-#define separa_controle_ula 	0x0f  // 0000 1111		usada com &
+#define separa_controle_ula     0x0f  // 0000 1111      usada com &
 
 // usadas para ativar e zerar a operacao da ULA. Atuam em SC_ULA 3-0
-#define ativa_soma				0x02	// 00000010		usada com |
-#define ativa_subtracao			0x06	// 00000110		usada com |
-#define ativa_and				0x00	// 00000000		usada com |
-#define ativa_or				0x01	// 00000001		usada com |
-#define ativa_slt				0x07	// 00000111		usada com |
-#define ativa_nor				0x0c	// 00001100		usada com |
-#define zera_controle_ULA		0xf0  	// 11110000		usada com &
+#define ativa_soma              0x02    // 00000010     usada com |
+#define ativa_subtracao         0x06    // 00000110     usada com |
+#define ativa_and               0x00    // 00000000     usada com |
+#define ativa_or                0x01    // 00000001     usada com |
+#define ativa_slt               0x07    // 00000111     usada com |
+#define ativa_nor               0x0c    // 00001100     usada com |
+#define zera_controle_ULA       0xf0    // 11110000     usada com &
 
 // mascaras usadas para separar os campos dentro da instrucao
-//						 			       31  26 25 21 20 16 15 11 10  6 5    0
-#define separa_cop			0xfc000000	// 111111 00000 00000 00000 00000 000000  usada com &
-#define separa_rs			0x03e00000	// 000000 11111 00000 00000 00000 000000  usada com &
-#define separa_rt			0x001f0000	// 000000 00000 11111 00000 00000 000000  usada com &
-#define separa_rd           0x0000f800	// 000000 00000 00000 11111 00000 000000  usada com &
-#define separa_cfuncao		0x0000003f	// 000000 00000 00000 00000 00000 111111  usada com &
-#define separa_imediato     0x0000ffff	// 000000 00000 00000   1111111111111111  usada com &
+//                                         31  26 25 21 20 16 15 11 10  6 5    0
+#define separa_cop          0xfc000000  // 111111 00000 00000 00000 00000 000000  usada com &
+#define separa_rs           0x03e00000  // 000000 11111 00000 00000 00000 000000  usada com &
+#define separa_rt           0x001f0000  // 000000 00000 11111 00000 00000 000000  usada com &
+#define separa_rd           0x0000f800  // 000000 00000 00000 11111 00000 000000  usada com &
+#define separa_cfuncao      0x0000003f  // 000000 00000 00000 00000 00000 111111  usada com &
+#define separa_imediato     0x0000ffff  // 000000 00000 00000   1111111111111111  usada com &
 #define separa_endereco_jump 0x03ffffff // 000000     11111111111111111111111111  usada com &
 
 // usada para eliminar os 2 bits mais significativos do Campo Funcao.
 // Atua na variavel local dentro de UC_ULA
-#define zera_2bits_cfuncao		0x0f		// 00 00 1111   usada com &
+#define zera_2bits_cfuncao      0x0f        // 00 00 1111   usada com &
 
 // usada para separar os 4 bits mais significativos de PC. Atua em PC.
-#define separa_4bits_PC			0xf0000000	// 11110000000000000000000000000000  usada com &
+#define separa_4bits_PC         0xf0000000  // 11110000000000000000000000000000  usada com &
 
 // usadas para ativar os sinais de controle. Atuam em SC.
-#define ativa_RegDst			0x0001	   // 0000 0000 0000 0001  usada com |
-#define ativa_RegWrite			0x0002      // 0000 0000 0000 0010  usada com |
-#define ativa_ALUSrcA         	0x0004      // 0000 0000 0000 0100  usada com |
-#define ativa_ALUSrcB0        	0x0008      // 0000 0000 0000 1000  usada com |
-#define ativa_ALUSrcB1        	0x0010      // 0000 0000 0001 0000  usada com |
-#define ativa_ALUOp0          	0x0020      // 0000 0000 0010 0000  usada com |
-#define ativa_ALUOp1          	0x0040      // 0000 0000 0100 0000  usada com |
-#define ativa_PCSource0   		0x0080      // 0000 0000 1000 0000  usada com |
-#define ativa_PCSource1	 		0x0100      // 0000 0001 0000 0000  usada com |
-#define ativa_PCWriteCond		0x0200      // 0000 0010 0000 0000  usada com |
-#define ativa_PCWrite			0x0400      // 0000 0100 0000 0000  usada com |
-#define ativa_IorD				0x0800      // 0000 1000 0000 0000  usada com |
-#define ativa_MemRead			0x1000      // 0001 0000 0000 0000  usada com |
-#define ativa_MemWrite			0x2000      // 0010 0000 0000 0000  usada com |
-#define ativa_MemtoReg			0x4000      // 0100 0000 0000 0000  usada com |
-#define ativa_IRWrite			0x8000      // 1000 0000 0000 0000  usada com |
+#define ativa_RegDst            0x0001     // 0000 0000 0000 0001  usada com |
+#define ativa_RegWrite          0x0002      // 0000 0000 0000 0010  usada com |
+#define ativa_ALUSrcA           0x0004      // 0000 0000 0000 0100  usada com |
+#define ativa_ALUSrcB0          0x0008      // 0000 0000 0000 1000  usada com |
+#define ativa_ALUSrcB1          0x0010      // 0000 0000 0001 0000  usada com |
+#define ativa_ALUOp0            0x0020      // 0000 0000 0010 0000  usada com |
+#define ativa_ALUOp1            0x0040      // 0000 0000 0100 0000  usada com |
+#define ativa_PCSource0         0x0080      // 0000 0000 1000 0000  usada com |
+#define ativa_PCSource1         0x0100      // 0000 0001 0000 0000  usada com |
+#define ativa_PCWriteCond       0x0200      // 0000 0010 0000 0000  usada com |
+#define ativa_PCWrite           0x0400      // 0000 0100 0000 0000  usada com |
+#define ativa_IorD              0x0800      // 0000 1000 0000 0000  usada com |
+#define ativa_MemRead           0x1000      // 0001 0000 0000 0000  usada com |
+#define ativa_MemWrite          0x2000      // 0010 0000 0000 0000  usada com |
+#define ativa_MemtoReg          0x4000      // 0100 0000 0000 0000  usada com |
+#define ativa_IRWrite           0x8000      // 1000 0000 0000 0000  usada com |
 
 // usadas para desativar os sinais de controle. Atuam em SC
-#define desativa_RegDst				0xfffe		// 1111 1111 1111 1110  usada com &
-#define desativa_RegWrite			0xfffd      // 1111 1111 1111 1101  usada com &
-#define desativa_ALUSrcA			0xfffb      // 1111 1111 1111 1011  usada com &
-#define desativa_ALUSrcB0			0xfff7      // 1111 1111 1111 0111  usada com &
-#define desativa_ALUSrcB1			0xffef      // 1111 1111 1110 1111  usada com &
-#define desativa_ALUOp0				0xffdf      // 1111 1111 1101 1111  usada com &
-#define desativa_ALUOp1				0xffbf      // 1111 1111 1011 1111  usada com &
-#define desativa_PCSource0			0xff7f      // 1111 1111 0111 1111  usada com &
-#define desativa_PCSource1			0xfeff      // 1111 1110 1111 1111  usada com &
-#define desativa_PCWriteCond		0xfdff      // 1111 1101 1111 1111  usada com &
-#define desativa_PCWrite			0xfbff      // 1111 1011 1111 1111  usada com &
-#define desativa_IorD				0xf7ff      // 1111 0111 1111 1111  usada com &
-#define desativa_MemRead			0xefff      // 1110 1111 1111 1111  usada com &
-#define desativa_MemWrite			0xdfff      // 1101 1111 1111 1111  usada com &
-#define desativa_MemtoReg			0xbfff      // 1011 1111 1111 1111  usada com &
-#define desativa_IRWrite			0x7fff      // 0111 1111 1111 1111  usada com &
+#define desativa_RegDst             0xfffe      // 1111 1111 1111 1110  usada com &
+#define desativa_RegWrite           0xfffd      // 1111 1111 1111 1101  usada com &
+#define desativa_ALUSrcA            0xfffb      // 1111 1111 1111 1011  usada com &
+#define desativa_ALUSrcB0           0xfff7      // 1111 1111 1111 0111  usada com &
+#define desativa_ALUSrcB1           0xffef      // 1111 1111 1110 1111  usada com &
+#define desativa_ALUOp0             0xffdf      // 1111 1111 1101 1111  usada com &
+#define desativa_ALUOp1             0xffbf      // 1111 1111 1011 1111  usada com &
+#define desativa_PCSource0          0xff7f      // 1111 1111 0111 1111  usada com &
+#define desativa_PCSource1          0xfeff      // 1111 1110 1111 1111  usada com &
+#define desativa_PCWriteCond        0xfdff      // 1111 1101 1111 1111  usada com &
+#define desativa_PCWrite            0xfbff      // 1111 1011 1111 1111  usada com &
+#define desativa_IorD               0xf7ff      // 1111 0111 1111 1111  usada com &
+#define desativa_MemRead            0xefff      // 1110 1111 1111 1111  usada com &
+#define desativa_MemWrite           0xdfff      // 1101 1111 1111 1111  usada com &
+#define desativa_MemtoReg           0xbfff      // 1011 1111 1111 1111  usada com &
+#define desativa_IRWrite            0x7fff      // 0111 1111 1111 1111  usada com &
 
 // usadas para separar os sinais de controle. Atuam em SC.
-#define separa_RegDst		   0x0001	   // 0000 0000 0000 0001  usada com | 
-#define separa_RegWrite		   0x0002      // 0000 0000 0000 0010  usada com |
-#define separa_ALUSrcA    	   0x0004      // 0000 0000 0000 0100  usada com |
+#define separa_RegDst          0x0001      // 0000 0000 0000 0001  usada com | 
+#define separa_RegWrite        0x0002      // 0000 0000 0000 0010  usada com |
+#define separa_ALUSrcA         0x0004      // 0000 0000 0000 0100  usada com |
 #define separa_ALUSrcB0        0x0008      // 0000 0000 0000 1000  usada com |
 #define separa_ALUSrcB1        0x0010      // 0000 0000 0001 0000  usada com |
 #define separa_ALUOp0          0x0020      // 0000 0000 0010 0000  usada com |
