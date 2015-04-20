@@ -1,15 +1,13 @@
 /*
- File with implementation of the control unit routine.
- It receives a control parameter from control unit to choose
- between PC's or ALUOut's adresses content to send to the main memory.
- */
+	>> Arquivo com a implementacao da unidade de controle.
+	>> Recebe um parametro de controle para a unidade de controle escolher
+	>> entre os endereços de conteudo de pc ou aluout e mandar para a memoria principal.
+*/
 #ifndef _CONTROL_UNIT_
 #define _CONTROL_UNIT_
 
 #include <pthread.h>
 #include "mascara.h"
-
-#define PC 0
 
 /////////////////////////////////////////////////////////////////////
 //////////////// UNIDADE DE CONTROLE ////////////////////////////////
@@ -137,72 +135,112 @@ void gera_sinal_controle (int *output, char S)
         *output = *output | ativa_PCSource1;
         *output = *output | volta_busca;
     }
-}//fecha void gera_sinal_controle (int *output, char S)
+}
 
-void control_unit(void *not_used)
-{
-    int sinal, last_clock = 10;
-    char S = -1;
-    cs.isUpdated = 0;
-    char op = ((ir & separa_cop) >> 26) & 0x3f;
+int isValidInstruction(int instr) {//verifica se a instrucao lida corresponde a uma dentre as descritas na especificacao
+    int opcode = ((instr & separa_cop) >> 26) & 0x3f;
+    int funct = (char)(instr & separa_cfuncao) & zera_2bits_cfuncao;
+    if(instr == 0)
+        return 0;
+    else if(instr == -1)
+        return 1;
+    else if((opcode != op_beq) && (opcode != op_jump) && (opcode != op_lw) && (opcode != op_sw) && (opcode != op_r_type))
+        return 0;
+    else  if((opcode == op_r_type) && (funct != 0x00) && (funct != 0x02) && (funct != 0x04) && (funct != 0x05) && (funct != 0x0a))
+        return 0;
+    else
+        return 1;
+}
+
+void control_unit(void *not_used){
     
-    while(ir)
-    {
-        if (last_clock != cpu_clock){
-            switch(cpu_clock)
-            {
-                case 0:
-                    /*Busca Instrução 1 Estado
-                     Gera sinais de controle
-                     */
-                    S = 0;
-                    break;
-                    
-                case 1:
-                    /*Decodifica 2 Estados
-                     Gera novos sinais de controle
-                     */
-                    S = 1;
-                    break;
-                    
-                case 2:
-                    if(op == op_jump)                   //jump
-                        S = 9;
-                    else if(op == op_beq)               //beq
-                        S = 8;
-                    else if(op == op_r_type)            //r-type
-                        S = 6;
-                    else if(op == op_lw || op == op_sw) //lw ou sw
-                        S = 2;
-                    break;
-                    
-                case 3:
-                    if(op == op_r_type)     //r-type
-                        S = 7;
-                    else if(op == op_lw)    //lw ou sw
-                        S = 3;
-                    else if(op == op_sw)    //lw ou sw
-                        S = 5;
-                    break;
-                    
-                case 4: // Somente executara no caso da instrucao lw
-                    S = 4;
-                    break;
-            }
-            gera_sinal_controle (&sinal, S);
+	pthread_barrier_wait(&threads_creation);
+
+    	int last_clock = 1;
+    	int instr;
+    	int current_cycle_number = 0, total_cycles = 2;
+    	int validInstruction;
+    	int sinal;
+    	char S = -1;//variavel que sera enviada para a funcao gera_sinal_controle. -1 eh para evitar erros
+    	char opcode;
+
+    	while(1){
+	    	if(last_clock != cpu_clock){
             
-            pthread_mutex_lock(&control_sign);
-            cs.value = (short int)(sinal & 0x0000ffff);
-            cs.isUpdated = 1;
-            pthread_cond_broadcast(&control_sign_wait);
-            pthread_mutex_unlock(&control_sign);
-            pthread_barrier_wait(&current_cycle);
-            cs.isUpdated = 0;
-            
-            pthread_barrier_wait(&update_registers);
-        }
-        else pthread_yield();
-    }
-    pthread_exit(0);
+		    	if(current_cycle_number == 1) {
+		        	opcode = ((ir & separa_cop) >> 26) & 0x3f;//verifica qual operacao esta sendo realizada
+		        	if (opcode == op_beq || opcode == op_jump)
+		            		total_cycles = 2;//decide quandos ciclos serao necessarios para completar operacao
+		        	else if (opcode == op_lw)
+		            		total_cycles = 4;
+		        	else total_cycles = 3;
+				}
+
+				char op = ((ir & separa_cop) >> 26) & 0x3f;
+				
+				switch(current_cycle_number){
+					case 0:
+						S = 0;
+								break; 
+						case 1:
+								S = 1;
+								break;
+						case 2:
+								if(op == op_jump)                   //jump
+									S = 9;
+								else if(op == op_beq)               //beq
+									S = 8;
+								else if(op == op_r_type)            //r-type
+									S = 6;
+								else if(op == op_lw || op == op_sw) //lw ou sw
+									S = 2;
+								break;
+						case 3:
+								if(op == op_r_type)     //r-type
+									S = 7;
+								else if(op == op_lw)    //lw ou sw
+									S = 3;
+								else if(op == op_sw)    //lw ou sw
+									S = 5;
+								break;
+						case 4: // Somente executara no caso da instrucao lw
+								S = 4;
+								break;
+				}
+				
+				last_clock = cpu_clock;
+				
+				if(current_cycle_number < total_cycles)
+						current_cycle_number++;
+				else current_cycle_number = 0;
+				
+				gera_sinal_controle (&sinal, S);
+				cs.value = (short int)(sinal & 0x0000ffff);
+
+				instr = ir;
+				validInstruction = isValidInstruction(instr);
+				
+				if( !validInstruction ){
+					loop = 0;
+					cs.invalidInstruction = 1;
+				}
+
+				pthread_mutex_lock(&control_sign);
+				cs.isUpdated = 1;
+				pthread_cond_broadcast(&control_sign_wait);
+				pthread_mutex_unlock(&control_sign);
+
+				if(!validInstruction ){
+						pthread_barrier_wait(&update_registers);
+						pthread_exit(0);
+				}
+					
+				pthread_barrier_wait(&current_cycle);
+				cs.isUpdated = 0;
+				pthread_barrier_wait(&update_registers);
+
+			}//chave de if(last_clock != cpu_clock)
+				else pthread_yield();//da yeild para continuar com o andamento do processador; se o tique de clock atual nao necessitar da UC
+		}//chave do while(1)
 }
 #endif

@@ -1,17 +1,3 @@
-/*
- File with implementation of ALU routine.
- It receives a control parameter from the ALU control unit which
- indicates what kind of operation the ALU should perform.
- */
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
-// FALTA: IMPLEMENTAR MUTEXES, BARREIRAS E VARIAVEIS DE CONDICAO
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
-/*********************************************************************/
 #ifndef _ALU_
 #define _ALU_
 
@@ -34,96 +20,82 @@ void somador_completo (char *result_op, char a, char b, char * c_out, char c_in)
 //
 // Demais casos                    ALU_A = xxx, ALU_B = xxx   e ALU_control = xxx (don't care)
 // Argumentos da alu no trabalho de org: int a, int b, char alu_op, int *result_ula, char *zero, char *overflow
-void alu (void * not_used) {
-    int last_clock = 10;
-    alu_zero.isUpdated = 0;
-    alu_result.isUpdated = 0;
+void alu (void * not_used){
+
+        pthread_barrier_wait(&threads_creation);
     
-    
-    while(ir){
-        if (last_clock != cpu_clock){
+    	while(1){//loop de execucao
+            	pthread_mutex_lock(&control_sign);
+            	if(!cs.isUpdated){
+                	while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
+				}
+            	pthread_mutex_unlock(&control_sign);
+
+				if(cs.invalidInstruction){//verifica comandos invalidos. Aumenta robustez
+					pthread_barrier_wait(&update_registers);
+					pthread_exit(0);
+				}
+				
+				//verifica se os dados a serem usados estao atualizados
+				//pega os mutexes para realizar leiturae os libera em seguida
+				//se "variavel".isUpdated == 0, sera invocado cond_wait que libera o mutex enquanto o dado nao estiver pronto
+            	pthread_mutex_lock(&alu_sign);
+            	if(!alu_s.isUpdated)//alu_s.value contem o codigo para a operacao a ser feita
+                	while(pthread_cond_wait(&alu_sign_wait,&alu_sign) != 0);
+            	pthread_mutex_unlock(&alu_sign);
             
-            pthread_mutex_lock(&control_sign);
-            if(!cs.isUpdated)
-                while(pthread_cond_wait(&control_sign_wait,&control_sign) != 0);
-            pthread_mutex_unlock(&control_sign);
+            	pthread_mutex_lock(&mux_alusrca_result);
+            	if(!mux_alusrca_buffer.isUpdated)
+                	while(pthread_cond_wait(&mux_alusrca_execution_wait ,&mux_alusrca_result) != 0);
+            	pthread_mutex_unlock(&mux_alusrca_result);
             
-            pthread_mutex_lock(&alu_sign);
-            if(!alu_s.isUpdated)
-                while(pthread_cond_wait(&alu_sign_wait,&alu_sign) != 0);
-            pthread_mutex_unlock(&alu_sign);
+            	pthread_mutex_lock(&mux_alusrcb_result);
+            	if(!mux_alusrcb_buffer.isUpdated)//se o dado nao estiver pronto...
+                	while(pthread_cond_wait(&mux_alusrcb_execution_wait ,&mux_alusrcb_result) != 0);//...ele sera esperado
+				pthread_mutex_unlock(&mux_alusrcb_result);
+				
+				//seleciona a operacao valida
+            	if (alu_s.value == ativa_soma)
+            	{
+                	add(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value, &alu_overflow);
+            	}
+            	else if (alu_s.value == ativa_subtracao)
+            	{
+                	sub(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value, &alu_overflow);
+            	}
+            	else if (alu_s.value == ativa_and)
+            	{
+            	    and(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value);
+            	}
+            	else if (alu_s.value == ativa_or)
+            	{
+                	or(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value);
+            	}
+            	else if (alu_s.value == ativa_slt)
+            	{
+                	slt(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value);
+            	}
             
-            pthread_mutex_lock(&mux_alusrca_result);
-            if(!mux_alusrca_buffer.isUpdated)
-                while(pthread_cond_wait(&mux_alusrca_execution_wait ,&mux_alusrca_result) != 0);
-            pthread_mutex_unlock(&mux_alusrca_result);
+            	
+            	if (alu_result.value == 0x00)
+				alu_zero.value = 0x01;//saida zero da alu, ativara ou nao a escrita na memoria
+            	else alu_zero.value = 0x00;
             
-            pthread_mutex_lock(&mux_alusrcb_result);
-            if(!mux_alusrcb_buffer.isUpdated)
-                while(pthread_cond_wait(&mux_alusrcb_execution_wait ,&mux_alusrcb_result) != 0);
-            pthread_mutex_unlock(&mux_alusrcb_result);
+            	pthread_mutex_lock(&alu_result_mutex);//pega o mutex acoplado a alu_result
+            	alu_result.isUpdated = 1;//muda a flag para um sinalizando que o dado esta atualizado, ou seja, pronto para consumo
+            	pthread_cond_signal(&alu_result_wait);//sinaliza as threads dependentes da alu
+            	pthread_mutex_unlock(&alu_result_mutex);//abdica do controle do mutex
             
-            // Caso que o codigo de operacao indica uma soma
-            if (alu_s.value == ativa_soma)
-            {
-                add(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value, &alu_overflow);
-            }
+            	pthread_mutex_lock(&alu_zero_mutex);//toma controle do mutex asscociado a variavel zero da alu
+            	alu_zero.isUpdated = 1;
+            	pthread_cond_signal(&alu_zero_wait);
+            	pthread_mutex_unlock(&alu_zero_mutex);
             
-            // Caso que o codigo de operacao indica uma subtracao
-            else if (alu_s.value == ativa_subtracao)
-            {
-                sub(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value, &alu_overflow);
-            }
-            
-            // Caso que o codigo de operacao indica uma operacao and
-            else if (alu_s.value == ativa_and)
-            {
-                and(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value);
-            }
-            
-            // Caso que o codigo de operacao indica uma operacao or
-            else if (alu_s.value == ativa_or)
-            {
-                or(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value);
-            }
-            
-            // Caso que o codigo de operacao indica uma operacao slt
-            else if (alu_s.value == ativa_slt)
-            {
-                slt(&alu_result.value, mux_alusrca_buffer.value, mux_alusrcb_buffer.value);
-            }
-            
-            // Se o resultado da ula for zero, o retorno *zero eh setado.
-            if (alu_s.value == 0x00) alu_zero.value = 0x01;
-            else alu_zero.value = 0x00;
-            
-            // O resultado da operacao da ula tambem eh retornado pela funcao so que nao
-            // kkk zoeira mano essa funcao é void!!!1 lol
-            //return *alu_result;
-            
-            last_clock = cpu_clock;
-            
-            pthread_mutex_lock(&alu_result_mutex);
-            alu_result.isUpdated = 1;
-            pthread_cond_signal(&alu_result_wait);
-            pthread_mutex_unlock(&alu_result_mutex);
-            
-            pthread_mutex_lock(&alu_zero_mutex);
-            alu_zero.isUpdated = 1;
-            pthread_cond_signal(&alu_zero_wait);
-            pthread_mutex_unlock(&alu_zero_mutex);
-            
-            pthread_barrier_wait(&current_cycle);
-            alu_result.isUpdated = 0;
-            alu_zero.isUpdated = 0;
-            pthread_barrier_wait(&update_registers);
-            
-        }
-        else pthread_yield();
-    }
-    
-    
-    pthread_exit(0);
+            	pthread_barrier_wait(&current_cycle);
+            	alu_result.isUpdated = 0;//apos o consumo da informacao (garantido pelo current cycle) isUpdated vira zero
+            	alu_zero.isUpdated = 0;//ou seja o valor esta desatualizado e sera preciso um novo ciclo para atualiza-lo
+            	pthread_barrier_wait(&update_registers);
+	}
 }
 
 void somador_completo (char *result_op, char a, char b, char * c_out, char c_in)
