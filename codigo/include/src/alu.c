@@ -1,3 +1,16 @@
+/* SSC0640 - Sistemas Operacionais I
+* Trabalho 1 - CPU MIPS com pthreads em C
+* Data: 22/04/2015
+***************************************************************
+* Integrantes do Grupo:
+* Guilherme Nishina Fortes 			- No. USP 7245552
+* Henrique de Almeida Machado da Silveira 	- No. USP 7961089
+* Marcello de Paula Ferreira Costa 		- No. USP 7960690
+* Sergio Yudi Takeda 				- No. USP 7572996
+***************************************************************
+* GRUPO 13
+*/
+
 #ifndef _ALU_
 #define _ALU_
 
