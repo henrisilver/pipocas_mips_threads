@@ -44,7 +44,7 @@ Para remover todos os arquivos .o gerados (arquivos objeto) e o executável, exe
 no terminal.
 ************************
 
-Comentários gerais sobre blocos empregados em todas as unidades lógicas do simulador.
+A seguir, comentários gerais sobre os blocos empregados em todas as unidades lógicas do simulador.
 
 // Bloco 1
 	pthread_mutex_lock(&control_sign);
@@ -63,7 +63,7 @@ só esperarão pela variável de condição se necessário.
 	cs.isUpdated = 1;					/* Seta o valor de cs.isUpdated */
 	pthread_cond_broadcast(&control_sign_wait);         	/* "Acorda" todas as threads que estão
 								"dormindo" nessa variável */
-	pthread_mutex_unlock(&control_sign);		/* Abdica o controle da região crítica */
+	pthread_mutex_unlock(&control_sign);			/* Abdica o controle da região crítica */
 
 O par de blocos exemplificado acima é usado para garantir semântica e sequência de execução de
 várias unidades da CPU MIPS quando necessário. Por exemplo, um multiplexador que precisa esperar
@@ -79,6 +79,7 @@ Na unidade de controle ocorre a verificação a seguir:
 		loop = 0;
 		cs.invalidInstruction = 1;
 	}
+	
 Previamente a essa verificação, a unidade de controle faz a verificação e determina se a instrução
 contida no registrador IR é válida, ou seja, se é uma das 9 instruções implementadas no simulador em
 questão (add, sub, and, or, slt, lw, sw, beq, j) ou se o conteúdo de IR é 0x00000000, valor que indica 
@@ -90,7 +91,7 @@ sinal de controle (c_sign), seja usado por outras threads por meio da rotina des
 // Bloco 4
 	if(cs.invalidInstruction){
 		pthread_barrier_wait(&update_registers);
-	pthread_exit(0);
+		pthread_exit(0);
 	}
 
 Continuando com o tratamento de erros, cs.invalidInstruction será 1 se houver uma instrução invalida.
