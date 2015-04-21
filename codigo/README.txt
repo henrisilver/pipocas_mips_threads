@@ -17,7 +17,7 @@ CONTEÚDO E NOMENCLATURA DAS PASTAS:
   	   grupo13
 		|___ include
 			   |___ src (todos os arquivos .c e .h)
-			   |___ obj (arquivos executáveis e .o)
+			   |___ obj (arquivos .o)
 		|___ Makefile
 		|___ README.txt
 
