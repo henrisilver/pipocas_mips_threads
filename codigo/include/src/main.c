@@ -274,7 +274,7 @@ int main (int argc, char *argv[])
     	printf("Posicões de memória alteradas:\n");
     	for (i = 0; i < MEMORY_SIZE; i++){
         	if(memoria[i].isUpdated == 1)
-            		printf("Memória[%d] = \%d\n", i, memoria[i].value);
+            		printf("Memória[%d] = %d\n", i, memoria[i].value);
     	}
 	    
 	    //imprime o conteudo dos registradores
