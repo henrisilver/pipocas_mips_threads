@@ -105,18 +105,18 @@ int main (int argc, char *argv[])
 
 	/* PROGRAMA EM ASSEMBLY MIPS A SER EXECUTADO */
 	/* Código na memória - INSTRUCOES */
-	memoria[0].value = 0x8c480000; 	// 1000 1100 0100 1000 0000 0000 0000 0000 lw $t0, 0($v0) 5
-	memoria[1].value = 0x010c182a; 	// 0000 0001 0000 1100 0001 1000 0010 1010 slt $v1, $t0, $t4 4
-	memoria[2].value = 0x106d0004; 	// 0001 0000 0110 1101 0000 0000 0000 0100 beq $v1, $t5, fim(4 palavras abaixo de PC+4) 3
+	memoria[0].value = 0x8c480000; 	// 1000 1100 0100 1000 0000 0000 0000 0000 lw $t0, 0($v0)
+	memoria[1].value = 0x010c182a; 	// 0000 0001 0000 1100 0001 1000 0010 1010 slt $v1, $t0, $t4
+	memoria[2].value = 0x106d0004; 	// 0001 0000 0110 1101 0000 0000 0000 0100 beq $v1, $t5, fim(4 palavras abaixo de PC+4)
 	memoria[3].value = 0x01084020; 	// 0000 0001 0000 1000 0100 0000 0010 0000 add $t0, $t0, $t0
 	memoria[4].value = 0xac480000; 	// 1010 1100 0100 1000 0000 0000 0000 0000 sw $t0, 0($v0)
 	memoria[5].value = 0x004b1020; 	// 0000 0000 0100 1011 0001 0000 0010 0000 add $v0, $t3, $v0
-	memoria[6].value = 0x08000000; 	// 0000 1000 0000 0000 0000 0000 0000 0000 j inicio (palavra 0) 3
-	memoria[7].value = 0x8c900000; 	// 1000 1100 1001 0000 0000 0000 0000 0000 lw $s0, 0($a0) 5 	-> $s0 vira 2		//
-	memoria[8].value = 0x8c910004; 	// 1000 1100 1001 0001 0000 0000 0000 0100 lw $s1, 4($a0) 5		-> $s1 vira 5
-	memoria[9].value = 0x02119024;  // 0000 0010 0001 0001 1001 0000 0010 0100 and $s2, $s0, $s1
-	memoria[10].value = 0x02119825; // 0000 0010 0001 0001 1001 1000 0010 0101 or $s3, $s0, $s1 --- 010 OR 101 -> vira 111
-	memoria[11].value = 0x0211a022; // 0000 0010 0001 0001 1010 0000 0010 0010 sub $s4, $s0, $s1
+	memoria[6].value = 0x08000000; 	// 0000 1000 0000 0000 0000 0000 0000 0000 j inicio (palavra 0) 
+	memoria[7].value = 0x8c900000; 	// 1000 1100 1001 0000 0000 0000 0000 0000 lw $s0, 0($a0) -> $s0 vira 2
+	memoria[8].value = 0x8c910004; 	// 1000 1100 1001 0001 0000 0000 0000 0100 lw $s1, 4($a0) -> $s1 vira 5
+	memoria[9].value = 0x02119024;  // 0000 0010 0001 0001 1001 0000 0010 0100 and $s2, $s0, $s1 -> 010 AND 101 -> 000
+	memoria[10].value = 0x02119825; // 0000 0010 0001 0001 1001 1000 0010 0101 or $s3, $s0, $s1 -> 010 OR 101 -> vira 111
+	memoria[11].value = 0x0211a022; // 0000 0010 0001 0001 1010 0000 0010 0010 sub $s4, $s0, $s1 -> 2 - 5 = -3
 	memoria[12].value = 0xac920000;	// 1010 1100 1001 0010 0000 0000 0000 0000 sw $s2, 0($a0) -> memoria[18] alterada para 0
 	memoria[13].value = 0xac930004;	// 1010 1100 1001 0011 0000 0000 0000 0100 sw $s3, 4($a0) -> memoria[19] alterada para 7
 	memoria[14].value = 0;
