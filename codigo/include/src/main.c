@@ -81,8 +81,10 @@ pthread_barrier_t threads_creation;
 int main (int argc, char *argv[])
 {
     	int i;
-    	for(i = 0; i < MEMORY_SIZE; i++)
+    	for(i = 0; i < MEMORY_SIZE; i++) {
         	memoria[i].isUpdated = 0;//memoria[i].is updated indica se a memoria foi alterada. 0 nao, 1 sim
+        	memoria[i].value = 0;//inicializa todas as posicoes de memoria como zero
+    	}
         	
     	cs.isUpdated = 0;//is updated indica se o dado esta pronto para consumo. 0 nao, 1 sim.  cs eh a variavel de sinal de controle
 	cs.invalidInstruction = 0;//valid instruction verifica se a instrucao recebida eh uma dentre as especificadas do mips
