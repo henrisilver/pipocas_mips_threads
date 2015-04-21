@@ -1,3 +1,16 @@
+/* SSC0640 - Sistemas Operacionais I
+* Trabalho 1 - CPU MIPS com pthreads em C
+* Data: 22/04/2015
+***************************************************************
+* Integrantes do Grupo:
+* Guilherme Nishina Fortes 			- No. USP 7245552
+* Henrique de Almeida Machado da Silveira 	- No. USP 7961089
+* Marcello de Paula Ferreira Costa 		- No. USP 7960690
+* Sergio Yudi Takeda 				- No. USP 7572996
+***************************************************************
+* GRUPO 13
+*/
+
 #ifndef _MASCARA_
 #define _MASCARA_
 #define MEMORY_SIZE 512
@@ -5,6 +18,7 @@
 #define NUMREG 32
 #include <stdio.h>
 #include <unistd.h>
+
 // Structs usadas
 typedef struct connection {
     	int value;
@@ -14,12 +28,13 @@ typedef struct connection {
 typedef struct c_sign{
     	short int value;        // Inteiro que representa o sinal de controle
     	int isUpdated;          // 1 para atualizado e 0 caso contrário
-	int invalidInstruction;
+	int invalidInstruction; // inteiro para simbolizar quando a UC detecta uma instrucao
+				// invalida
 }c_sign;
 
 typedef struct alu_signal{
     char value;        // Inteiro que representa o sinal de controle
-    int isUpdated;          // 1 para atualizado e 0 caso contrário
+    int isUpdated;     // 1 para atualizado e 0 caso contrário
 }alu_signal;
 
 void control_unit(void *);
