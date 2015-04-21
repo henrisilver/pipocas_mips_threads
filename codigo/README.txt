@@ -11,6 +11,39 @@
 * GRUPO 13
 */
 
+*************************************
+CONTEÚDO E NOMENCLATURA DAS PASTAS:
+
+  	   grupo13
+		|___ include
+			   |___ src (todos os arquivos .c e .h)
+			   |___obj (arquivos executáveis e .o)
+		|___ Makefile
+		|___ README.txt
+
+*************************************
+
+************************
+COMO UTILIZAR O CÓDIGO: 
+
+Estando no diretório grupo13, que contém o Makefile e a pasta include com os arquivos
+.c e .h referentes ao trabalho, digite
+
+	$ make
+
+no terminal, para compilar todos os arquivos.
+Após a compilação, digite
+
+	$ make run
+
+no terminal, para executar o simulador MIPS com pthreads.
+Para remover todos os arquivos .o gerados (arquivos objeto) e o executável, execute o comando
+	
+	$ make clean
+
+no terminal.
+************************
+
 Comentários gerais sobre blocos empregados em todas as unidades lógicas do simulador.
 
 // Bloco 1
